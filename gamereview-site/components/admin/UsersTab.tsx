@@ -24,6 +24,9 @@ export function UsersTab({ gamesById, reviews, setReviews }: UsersTabProps) {
     role: Role;
     username: string;
   } | null>(null);
+  const [pendingDeleteReviewId, setPendingDeleteReviewId] = useState<
+    string | null
+  >(null);
 
   const selected = users.find((u) => u.id === selectedUserId) ?? null;
   const userReviews = useMemo(
@@ -53,6 +56,14 @@ export function UsersTab({ gamesById, reviews, setReviews }: UsersTabProps) {
       ),
     );
     setPendingRole(null);
+  }
+
+  function confirmDeleteReview() {
+    if (!pendingDeleteReviewId) return;
+    setReviews((prev) =>
+      prev.filter((r) => r.id !== pendingDeleteReviewId),
+    );
+    setPendingDeleteReviewId(null);
   }
 
   return (
@@ -221,17 +232,7 @@ export function UsersTab({ gamesById, reviews, setReviews }: UsersTabProps) {
                       <button
                         type="button"
                         className="glass-button rounded-lg px-3 py-1.5 text-xs text-[#ffb4b4]"
-                        onClick={() => {
-                          if (
-                            !window.confirm(
-                              "Delete this review? This cannot be undone.",
-                            )
-                          )
-                            return;
-                          setReviews((prev) =>
-                            prev.filter((r) => r.id !== review.id),
-                          );
-                        }}
+                        onClick={() => setPendingDeleteReviewId(review.id)}
                       >
                         Delete review
                       </button>
@@ -255,6 +256,16 @@ export function UsersTab({ gamesById, reviews, setReviews }: UsersTabProps) {
         confirmLabel="Update role"
         onCancel={() => setPendingRole(null)}
         onConfirm={confirmRoleChange}
+      />
+
+      <ConfirmDialog
+        open={Boolean(pendingDeleteReviewId)}
+        title="Delete review"
+        message="This review will be permanently removed. This cannot be undone."
+        confirmLabel="Delete review"
+        destructive
+        onCancel={() => setPendingDeleteReviewId(null)}
+        onConfirm={confirmDeleteReview}
       />
     </div>
   );

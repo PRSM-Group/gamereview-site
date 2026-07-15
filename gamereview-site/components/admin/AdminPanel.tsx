@@ -116,9 +116,6 @@ export function AdminPanel() {
               </span>
               <span className="text-left">
                 <span className="block leading-tight">{item.label}</span>
-                <span className="mt-0.5 block text-[11px] font-normal text-white/35">
-                  {item.description}
-                </span>
               </span>
             </button>
           ))}

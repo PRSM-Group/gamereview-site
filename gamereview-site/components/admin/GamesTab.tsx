@@ -37,11 +37,12 @@ export function GamesTab({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(emptyGameForm());
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [pendingDeleteReviewId, setPendingDeleteReviewId] = useState<
+    string | null
+  >(null);
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
 
-  const activeGames = useMemo(
-    () => games.filter((g) => !g.deleted),
-    [games],
-  );
+  const activeGames = useMemo(() => games.filter((g) => !g.deleted), [games]);
 
   const gameReviews = useMemo(
     () => reviews.filter((r) => r.gameId === editingId),
@@ -99,11 +100,11 @@ export function GamesTab({
 
   function saveGame() {
     if (!form.title.trim() || !form.developer.trim() || !form.releaseDate) {
-      window.alert("Title, developer, and release date are required.");
+      setAlertMessage("Title, developer, and release date are required.");
       return;
     }
     if (form.platforms.length === 0) {
-      window.alert("Select at least one platform.");
+      setAlertMessage("Select at least one platform.");
       return;
     }
 
@@ -125,6 +126,14 @@ export function GamesTab({
     );
     if (editingId === deleteId) closeEditor();
     setDeleteId(null);
+  }
+
+  function confirmDeleteReview() {
+    if (!pendingDeleteReviewId) return;
+    setReviews((prev) =>
+      prev.filter((r) => r.id !== pendingDeleteReviewId),
+    );
+    setPendingDeleteReviewId(null);
   }
 
   if (mode !== "list") {
@@ -286,7 +295,7 @@ export function GamesTab({
                   className="glass-button rounded-lg px-5 py-2.5 text-sm text-[#ffb4b4]"
                   onClick={() => setDeleteId(editingId)}
                 >
-                  Soft delete
+                  Delete
                 </button>
               ) : null}
             </div>
@@ -364,17 +373,9 @@ export function GamesTab({
                           <button
                             type="button"
                             className="text-[11px] text-[#ffb4b4]"
-                            onClick={() => {
-                              if (
-                                !window.confirm(
-                                  "Delete this review? This cannot be undone.",
-                                )
-                              )
-                                return;
-                              setReviews((prev) =>
-                                prev.filter((r) => r.id !== review.id),
-                              );
-                            }}
+                            onClick={() =>
+                              setPendingDeleteReviewId(review.id)
+                            }
                           >
                             Delete
                           </button>
@@ -397,11 +398,32 @@ export function GamesTab({
 
         <ConfirmDialog
           open={Boolean(deleteId)}
-          title="Soft delete game"
+          title="Delete game"
           message="This will hide the game from the admin list (soft delete). Continue?"
           confirmLabel="Soft delete"
+          destructive
           onCancel={() => setDeleteId(null)}
           onConfirm={confirmDelete}
+        />
+
+        <ConfirmDialog
+          open={Boolean(pendingDeleteReviewId)}
+          title="Delete review"
+          message="This review will be permanently removed. This cannot be undone."
+          confirmLabel="Delete review"
+          destructive
+          onCancel={() => setPendingDeleteReviewId(null)}
+          onConfirm={confirmDeleteReview}
+        />
+
+        <ConfirmDialog
+          open={Boolean(alertMessage)}
+          mode="alert"
+          title="Missing information"
+          message={alertMessage ?? ""}
+          confirmLabel="OK"
+          onCancel={() => setAlertMessage(null)}
+          onConfirm={() => setAlertMessage(null)}
         />
       </div>
     );
@@ -462,7 +484,7 @@ export function GamesTab({
                     className="glass-button flex-1 rounded-lg px-3 py-2 text-xs font-medium"
                     onClick={() => openEdit(game)}
                   >
-                    Edit / details
+                    Details
                   </button>
                   <button
                     type="button"
@@ -480,11 +502,22 @@ export function GamesTab({
 
       <ConfirmDialog
         open={Boolean(deleteId)}
-        title="Soft delete game"
+        title="Delete game"
         message="This will hide the game from the admin list (soft delete). Continue?"
         confirmLabel="Soft delete"
+        destructive
         onCancel={() => setDeleteId(null)}
         onConfirm={confirmDelete}
+      />
+
+      <ConfirmDialog
+        open={Boolean(alertMessage)}
+        mode="alert"
+        title="Missing information"
+        message={alertMessage ?? ""}
+        confirmLabel="OK"
+        onCancel={() => setAlertMessage(null)}
+        onConfirm={() => setAlertMessage(null)}
       />
     </div>
   );
