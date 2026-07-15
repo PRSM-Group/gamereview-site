@@ -8,7 +8,7 @@ export default async function Home() {
 
   return (
     <div className="min-h-full bg-[#070000] text-white">
-      <div className="animate-fade-in">
+      <div className="relative z-50 animate-fade-in">
         <SiteHeader />
       </div>
 

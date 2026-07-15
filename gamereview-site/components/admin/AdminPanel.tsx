@@ -183,14 +183,14 @@ export function AdminPanel() {
             <UsersTab
               gamesById={gamesById}
               reviews={reviews}
-              setReviews={setReviews}
+              setReviewsAction={setReviews}
             />
           ) : (
             <GamesTab
               games={games}
-              setGames={setGames}
+              setGamesAction={setGames}
               reviews={reviews}
-              setReviews={setReviews}
+              setReviewsAction={setReviews}
             />
           )}
         </main>

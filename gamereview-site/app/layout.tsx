@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Jersey_15, Kumbh_Sans, Unbounded } from "next/font/google";
+import { auth } from "@/auth";
+import { SessionProvider } from "@/components/auth/SessionsProvider";
 import "./globals.css";
 
 const jersey = Jersey_15({
@@ -24,17 +26,21 @@ export const metadata: Metadata = {
     "We play the bugs, endure the grinds, and celebrate the masterpieces so you don't waste your time or money.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+
   return (
     <html
       lang="en"
       className={`${jersey.variable} ${unbounded.variable} ${kumbh.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-kumbh">{children}</body>
+      <body className="min-h-full flex flex-col font-kumbh">
+        <SessionProvider session={session}>{children}</SessionProvider>
+      </body>
     </html>
   );
 }

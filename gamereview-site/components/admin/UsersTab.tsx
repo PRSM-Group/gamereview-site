@@ -13,10 +13,14 @@ import {
 type UsersTabProps = {
   gamesById: Record<string, string>;
   reviews: MockReview[];
-  setReviews: React.Dispatch<React.SetStateAction<MockReview[]>>;
+  setReviewsAction: React.Dispatch<React.SetStateAction<MockReview[]>>;
 };
 
-export function UsersTab({ gamesById, reviews, setReviews }: UsersTabProps) {
+export function UsersTab({
+  gamesById,
+  reviews,
+  setReviewsAction,
+}: UsersTabProps) {
   const [users, setUsers] = useState<MockUser[]>(initialUsers);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [pendingRole, setPendingRole] = useState<{
@@ -60,7 +64,7 @@ export function UsersTab({ gamesById, reviews, setReviews }: UsersTabProps) {
 
   function confirmDeleteReview() {
     if (!pendingDeleteReviewId) return;
-    setReviews((prev) => prev.filter((r) => r.id !== pendingDeleteReviewId));
+    setReviewsAction((prev) => prev.filter((r) => r.id !== pendingDeleteReviewId));
     setPendingDeleteReviewId(null);
   }
 
@@ -217,7 +221,7 @@ export function UsersTab({ gamesById, reviews, setReviews }: UsersTabProps) {
                           type="button"
                           className="glass-button rounded-lg px-3 py-1.5 text-xs"
                           onClick={() =>
-                            setReviews((prev) =>
+                            setReviewsAction((prev) =>
                               prev.map((r) =>
                                 r.id === review.id ? { ...r, flagCount: 0 } : r,
                               ),

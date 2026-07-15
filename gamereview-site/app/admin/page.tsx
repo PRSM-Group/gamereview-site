@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { AdminPanel } from "@/components/admin/AdminPanel";
 
 export const metadata: Metadata = {
-  title: "Admin · CRITLINE",
-  description: "Admin panel (frontend mock)",
+  title: "Admin · VOXEL",
+  description: "Admin Panel",
 };
 
 export default function AdminPage() {

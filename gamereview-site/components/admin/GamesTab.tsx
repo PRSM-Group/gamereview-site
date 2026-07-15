@@ -15,9 +15,9 @@ import {
 
 type GamesTabProps = {
   games: MockGame[];
-  setGames: React.Dispatch<React.SetStateAction<MockGame[]>>;
+  setGamesAction: React.Dispatch<React.SetStateAction<MockGame[]>>;
   reviews: MockReview[];
-  setReviews: React.Dispatch<React.SetStateAction<MockReview[]>>;
+  setReviewsAction: React.Dispatch<React.SetStateAction<MockReview[]>>;
 };
 
 type FormState = Omit<MockGame, "id" | "deleted">;
@@ -29,9 +29,9 @@ async function fileToObjectUrl(file: File | null): Promise<string | null> {
 
 export function GamesTab({
   games,
-  setGames,
+  setGamesAction,
   reviews,
-  setReviews,
+  setReviewsAction,
 }: GamesTabProps) {
   const [mode, setMode] = useState<"list" | "create" | "edit">("list");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -110,9 +110,9 @@ export function GamesTab({
 
     if (mode === "create") {
       const id = `game_${Date.now().toString(36)}`;
-      setGames((prev) => [{ id, deleted: false, ...form }, ...prev]);
+      setGamesAction((prev) => [{ id, deleted: false, ...form }, ...prev]);
     } else if (editingId) {
-      setGames((prev) =>
+      setGamesAction((prev) =>
         prev.map((g) => (g.id === editingId ? { ...g, ...form } : g)),
       );
     }
@@ -121,7 +121,7 @@ export function GamesTab({
 
   function confirmDelete() {
     if (!deleteId) return;
-    setGames((prev) =>
+    setGamesAction((prev) =>
       prev.map((g) => (g.id === deleteId ? { ...g, deleted: true } : g)),
     );
     if (editingId === deleteId) closeEditor();
@@ -130,7 +130,7 @@ export function GamesTab({
 
   function confirmDeleteReview() {
     if (!pendingDeleteReviewId) return;
-    setReviews((prev) =>
+    setReviewsAction((prev) =>
       prev.filter((r) => r.id !== pendingDeleteReviewId),
     );
     setPendingDeleteReviewId(null);

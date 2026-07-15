@@ -1,24 +1,31 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSession, signOut } from "next-auth/react";
 import { SITE_NAME } from "@/lib/seed-data";
-
-const MENU_ITEMS = [
-  { label: "BROWSE", href: "/browse" },
-  { label: "REVIEWS", href: "#" },
-  { label: "MY PROFILE", href: "#" },
-] as const;
 
 const CLOSE_MS = 180;
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<number | null>(null);
+  const openRef = useRef(false);
+  const closingRef = useRef(false);
+
+  const { data: session, status } = useSession();
+  const isLoggedIn = Boolean(session?.user);
+  const role = session?.user?.role;
 
   const menuVisible = open || closing;
+
+  useEffect(() => {
+    openRef.current = open;
+    closingRef.current = closing;
+  }, [open, closing]);
 
   function clearCloseTimer() {
     if (closeTimer.current !== null) {
@@ -33,8 +40,8 @@ export function SiteHeader() {
     setOpen(true);
   }
 
-  function closeMenu() {
-    if (!open && !closing) return;
+  const closeMenu = useCallback(() => {
+    if (!openRef.current && !closingRef.current) return;
     clearCloseTimer();
     setOpen(false);
     setClosing(true);
@@ -42,6 +49,17 @@ export function SiteHeader() {
       setClosing(false);
       closeTimer.current = null;
     }, CLOSE_MS);
+  }, []);
+
+  type MenuItem = { label: string; href: string };
+  const menuItems: MenuItem[] = [
+    { label: "BROWSE", href: "/browse" },
+    { label: "REVIEWS", href: "#" },
+  ];
+  if (role === "ADMIN") {
+    menuItems.push({ label: "ADMIN DASHBOARD", href: "/admin" });
+  } else if (isLoggedIn) {
+    menuItems.push({ label: "MY PROFILE", href: "#" });
   }
 
   useEffect(() => {
@@ -61,19 +79,25 @@ export function SiteHeader() {
       if (event.key === "Escape") closeMenu();
     }
 
-    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("click", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
     return () => {
-      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("click", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [menuVisible]);
+  }, [menuVisible, closeMenu]);
 
   const itemClassName =
     "block border-b border-white/5 px-5 py-3.5 font-kumbh text-sm font-normal uppercase tracking-[0.14em] text-white/80 transition-colors duration-200 last:border-b-0 hover:bg-[rgba(88,5,14,0.28)] hover:text-white";
 
+  async function handleSignOut() {
+    if (signingOut) return;
+    setSigningOut(true);
+    await signOut({ callbackUrl: "/" });
+  }
+
   return (
-    <header className="relative z-40 border-b border-white/15">
+    <header className="relative z-50 border-b border-white/15">
       <div className="relative mx-auto flex h-[79px] max-w-[1280px] items-center justify-between px-6 md:px-[35px]">
         <div ref={menuRef} className="relative z-50">
           <button
@@ -104,15 +128,27 @@ export function SiteHeader() {
             <nav
               aria-label="Site menu"
               data-state={closing ? "closing" : "open"}
-              className="menu-dropdown absolute left-0 top-[calc(100%+14px)] min-w-[180px] overflow-hidden rounded-[10px] border border-[rgba(142,3,20,0.22)] bg-[rgba(88,5,14,0.12)] shadow-[0_16px_40px_rgba(0,0,0,0.35)] backdrop-blur-md"
+              className="menu-dropdown absolute left-0 top-[calc(100%+14px)] min-w-[220px] overflow-hidden rounded-[10px] border border-[rgba(142,3,20,0.22)] bg-[rgba(88,5,14,0.12)] shadow-[0_16px_40px_rgba(0,0,0,0.35)] backdrop-blur-md"
             >
-              {MENU_ITEMS.map((item) =>
+              {menuItems.map((item) =>
                 item.href === "#" ? (
                   <a
                     key={item.label}
                     href="#"
                     className={itemClassName}
-                    onClick={closeMenu}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      closeMenu();
+                    }}
+                  >
+                    {item.label}
+                  </a>
+                ) : item.href === "/admin" ? (
+                  // Full navigation so /admin proxy + layout auth re-read the session cookie
+                  <a
+                    key={item.label}
+                    href="/admin"
+                    className={itemClassName}
                   >
                     {item.label}
                   </a>
@@ -138,12 +174,25 @@ export function SiteHeader() {
           {SITE_NAME}
         </Link>
 
-        <a
-          href="#"
-          className="glass-button flex h-10 w-[130px] items-center justify-center rounded-[10px] font-kumbh text-sm font-semibold text-white"
-        >
-          LOG IN
-        </a>
+        {isLoggedIn ? (
+          <button
+            type="button"
+            disabled={signingOut}
+            className="glass-button flex h-10 w-[130px] items-center justify-center rounded-[10px] font-kumbh text-sm font-semibold text-white disabled:opacity-60"
+            onClick={handleSignOut}
+          >
+            {signingOut ? "…" : "LOG OUT"}
+          </button>
+        ) : status === "loading" ? (
+          <span className="flex h-10 w-[130px]" aria-hidden />
+        ) : (
+          <Link
+            href="/login"
+            className="glass-button flex h-10 w-[130px] items-center justify-center rounded-[10px] font-kumbh text-sm font-semibold text-white"
+          >
+            LOG IN
+          </Link>
+        )}
       </div>
     </header>
   );
