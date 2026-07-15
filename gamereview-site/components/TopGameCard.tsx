@@ -26,7 +26,13 @@ export function TopGameCard({ game }: TopGameCardProps) {
         <h3 className="font-kumbh text-base font-semibold text-white">
           {game.title}
         </h3>
-        <StarRating rating={Math.round(game.averageRating)} size={16} />
+        <div className="flex items-center gap-2">
+          <StarRating rating={Math.round(game.averageRating)} size={16} />
+          <span className="font-kumbh text-xs text-white/45">
+            {game.reviewCount}{" "}
+            {game.reviewCount === 1 ? "reviewer" : "reviewers"}
+          </span>
+        </div>
       </div>
     </article>
   );

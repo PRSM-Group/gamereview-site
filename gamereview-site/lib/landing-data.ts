@@ -15,6 +15,7 @@ export type LandingGame = {
   title: string;
   coverImage: string | null;
   averageRating: number;
+  reviewCount: number;
 };
 
 export type LandingData = {
@@ -68,7 +69,13 @@ export async function getLandingData(): Promise<LandingData> {
     return {
       featuredReview,
       recentReviews,
-      topGames,
+      topGames: topGames.map((game) => ({
+        id: game.id,
+        title: game.title,
+        coverImage: game.coverImage,
+        averageRating: game.averageRating,
+        reviewCount: 0,
+      })),
       fromDatabase: true,
     };
   } catch {

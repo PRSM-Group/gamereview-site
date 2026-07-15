@@ -43,6 +43,37 @@ body {
   }
 }
 
+@keyframes menu-dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes menu-dropdown-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.97);
+  }
+}
+
+.menu-dropdown[data-state="open"] {
+  animation: menu-dropdown-in 0.22s ease-out both;
+}
+
+.menu-dropdown[data-state="closing"] {
+  animation: menu-dropdown-out 0.18s ease-in both;
+  pointer-events: none;
+}
+
 @keyframes orb-float-a {
   0%,
   100% {
@@ -109,6 +140,11 @@ body {
   box-shadow:
     0 12px 32px rgba(88, 5, 14, 0.22),
     0 0 18px rgba(142, 3, 20, 0.12);
+}
+
+/* Search bar: glass without lift */
+label.glass-card:hover {
+  transform: none;
 }
 
 .glass-button {
@@ -210,7 +246,9 @@ body {
   .hero-orb-a,
   .hero-orb-b,
   .hero-orb-c,
-  .hero-headline-gradient {
+  .hero-headline-gradient,
+  .menu-dropdown[data-state="open"],
+  .menu-dropdown[data-state="closing"] {
     animation: none;
   }
 

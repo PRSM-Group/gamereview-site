@@ -17,7 +17,8 @@ async function main() {
   await prisma.game.deleteMany();
 
   for (const game of seedGames) {
-    await prisma.game.create({ data: { ...game } });
+    const { reviewCount: _reviewCount, ...gameData } = game;
+    await prisma.game.create({ data: { ...gameData } });
   }
 
   for (const review of seedReviews) {

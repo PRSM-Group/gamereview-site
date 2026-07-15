@@ -1,4 +1,4 @@
-export const SITE_NAME = "CRITLINE";
+export const SITE_NAME = "VOXEL";
 
 export const seedGames = [
   {
@@ -6,24 +6,28 @@ export const seedGames = [
     title: "R.E.P.O.",
     coverImage: "/images/review-cover.png",
     averageRating: 4.8,
+    reviewCount: 128,
   },
   {
     id: "game_nightfall",
     title: "Nightfall Protocol",
     coverImage: "/images/review-cover.png",
     averageRating: 4.5,
+    reviewCount: 86,
   },
   {
     id: "game_ember",
     title: "Ember Circuit",
     coverImage: "/images/review-cover.png",
     averageRating: 4.2,
+    reviewCount: 54,
   },
   {
     id: "game_hollow",
     title: "Hollow Signal",
     coverImage: "/images/review-cover.png",
     averageRating: 4.9,
+    reviewCount: 203,
   },
 ] as const;
 
