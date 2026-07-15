@@ -1,0 +1,232 @@
+@import "tailwindcss";
+
+:root {
+  --background: #070000;
+  --foreground: #ffffff;
+  --brand-red: #58050e;
+  --brand-red-muted: rgba(88, 5, 14, 0.41);
+  --brand-red-soft: rgba(88, 5, 14, 0.1);
+  --accent-link: #8e0314;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-jersey: var(--font-jersey);
+  --font-unbounded: var(--font-unbounded);
+  --font-kumbh: var(--font-kumbh);
+  --font-sans: var(--font-kumbh);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes orb-float-a {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.45;
+  }
+  50% {
+    transform: translate(18px, -22px) scale(1.08);
+    opacity: 0.7;
+  }
+}
+
+@keyframes orb-float-b {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translate(-24px, 16px) scale(1.1);
+    opacity: 0.6;
+  }
+}
+
+@keyframes orb-float-c {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translate(12px, 20px) scale(1.06);
+    opacity: 0.55;
+  }
+}
+
+@keyframes hero-gradient-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.glass-card {
+  background: rgba(88, 5, 14, 0.08);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(142, 3, 20, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+  transition:
+    transform 0.3s ease,
+    border-color 0.3s ease,
+    background 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.glass-card:hover {
+  transform: translateY(-4px);
+  background: rgba(88, 5, 14, 0.14);
+  border-color: rgba(142, 3, 20, 0.4);
+  box-shadow:
+    0 12px 32px rgba(88, 5, 14, 0.22),
+    0 0 18px rgba(142, 3, 20, 0.12);
+}
+
+.glass-button {
+  background: rgba(88, 5, 14, 0.16);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(142, 3, 20, 0.32);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.glass-button:hover {
+  background: rgba(88, 5, 14, 0.26);
+  border-color: rgba(142, 3, 20, 0.5);
+  box-shadow:
+    0 6px 20px rgba(88, 5, 14, 0.28),
+    0 0 14px rgba(142, 3, 20, 0.14);
+}
+
+.hero-review-card {
+  transform-style: preserve-3d;
+  will-change: transform;
+  transition:
+    transform 0.12s ease-out,
+    border-color 0.3s ease,
+    background 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.glass-card.hero-review-card:hover {
+  transform: none;
+}
+
+.hero-orb {
+  pointer-events: none;
+  position: absolute;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle,
+    rgba(142, 3, 20, 0.55) 0%,
+    rgba(88, 5, 14, 0.25) 45%,
+    transparent 70%
+  );
+  filter: blur(8px);
+}
+
+.hero-orb-a {
+  animation: orb-float-a 9s ease-in-out infinite;
+}
+
+.hero-orb-b {
+  animation: orb-float-b 11s ease-in-out infinite;
+}
+
+.hero-orb-c {
+  animation: orb-float-c 13s ease-in-out infinite;
+}
+
+.animate-fade-up {
+  animation: fade-up 0.7s ease-out both;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.9s ease-out both;
+}
+
+.animate-delay-1 {
+  animation-delay: 0.12s;
+}
+
+.animate-delay-2 {
+  animation-delay: 0.24s;
+}
+
+.hero-headline-gradient {
+  background-image: linear-gradient(
+    90deg,
+    #1b0b0b 0%,
+    #58050e 20%,
+    #8e0314 40%,
+    #b01020 50%,
+    #8e0314 60%,
+    #58050e 80%,
+    #1b0b0b 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: hero-gradient-shift 10s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up,
+  .animate-fade-in,
+  .hero-orb-a,
+  .hero-orb-b,
+  .hero-orb-c,
+  .hero-headline-gradient {
+    animation: none;
+  }
+
+  .hero-headline-gradient {
+    background-size: auto;
+    background-image: linear-gradient(90deg, #58050e 35%, #1b0b0b 100%);
+  }
+
+  .glass-card:hover {
+    transform: none;
+  }
+
+  .hero-review-card {
+    transition:
+      border-color 0.3s ease,
+      background 0.3s ease,
+      box-shadow 0.3s ease;
+  }
+}

@@ -1,0 +1,24 @@
+- Never rewrite unchanged code; only output the exact lines that need modification.
+- Always provide targeted differences rather than full-file rewrites.
+- Stop and ask for user confirmation before initiating large-scale refactoring.
+- Do not run continuous background loops or multiple iterative fixes without explicit user approval.
+- Use the most token-efficient model available unless deeply complex reasoning is required.
+- Strict rule: Never repeat existing code blocks or full file structures.
+- Use placeholders like "// ... existing code unchanged ..." for unedited sections.
+- Maximize brevity. Omit pleasantries, long explanations, and markdown commentary.
+- Provide code-only responses unless explicitly asked to explain how it works.
+- Do not add unsolicited optimizations, cleanups, or extra features.
+- Do not rewrite an entire component just to change a style class or a single hook.
+- Isolate UI changes to the specific component or JSX element being modified.
+- Avoid importing entire component libraries or heavy utilities for small tasks.
+- If a UI component requires more than 50 lines of change, pause and ask for confirmation.
+- Provide only the modified endpoint, function, or route handler.
+- Do not generate sample client-side fetch requests unless requested.
+- Use native language features instead of pulling in new external dependencies.
+- Never output full mock data sets; use a brief comment representing the data shape.
+- Identify the exact root cause of the bug and fix only that specific line or block.
+- Do not refactor surrounding working code for aesthetic or structural preferences.
+- If a fix requires breaking changes in more than two files, list the files and ask for permission first.
+- Write only the specific test case requested; do not generate full test suites.
+- Use existing mock utilities and setups instead of writing new ones from scratch.
+- Keep test data objects minimal. Use the smallest possible payloads to validate behavior.
