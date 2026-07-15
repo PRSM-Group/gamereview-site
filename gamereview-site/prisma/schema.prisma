@@ -5,28 +5,111 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum Genre {
+  ACTION
+  ADVENTURE
+  RPG
+  STRATEGY
+  SIMULATION
+  SPORTS
+  PUZZLE
+  HORROR
+}
+
+enum Platform {
+  PC
+  PLAYSTATION
+  XBOX
+  NINTENDO
+  MOBILE
+}
+
+enum ReviewStatus {
+  PLAYING
+  FINISHED
+  DROPPED
+}
+
+enum Recommendation {
+  RECOMMENDED
+  NOT_RECOMMENDED
+}
+
+model User {
+  id String @id @default(cuid())
+  email String @unique
+  username String @unique
+  displayName String
+  passwordHash String
+  profileImage String? // not sure pa sa data type
+  bio String?
+  role UserRole @default(USER)
+  reviews Review[] // one-to-many relationship with Review model
+  likedGames Game[] @relation("LikedGames") // many-to-many relationship with Game model, junction table
+  likedReviews Review[] @relation("LikedReviews") // many-to-many relationship with Review model
+  followers Follow[] @relation("Following") 
+  following Follow[] @relation("Followers") 
+  flaggedReviews Review[] @relation("FlaggedReviews")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Game {
-  id            String   @id @default(cuid())
-  title         String
-  coverImage    String?
-  averageRating Float    @default(0)
-  reviews       Review[]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id String @id @default(cuid())
+  title String
+  slug String @unique
+  description String
+  developer String
+  releaseDate DateTime
+  coverImage String // not sure pa sa data type
+  bannerImage String // not sure pa sa data type
+  genres Genre[]
+  platforms Platform[]
+  reviews Review[] // one-to-many relationship with Review model
+  tags Tag[] // many-to-many relationship with Tag model
+  likedBy User[] @relation("LikedGames") // many-to-many relationship with User model, junction table
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
 }
 
 model Review {
-  id         String   @id @default(cuid())
-  title      String
-  content    String
-  rating     Int
-  authorName String
-  coverImage String?
-  featured   Boolean  @default(false)
-  gameId     String?
-  game       Game?    @relation(fields: [gameId], references: [id], onDelete: SetNull)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id String @id @default(cuid())
+  heading String
+  content String
+  rating Decimal @db.Decimal(2, 1) 
+  status ReviewStatus
+  recommendation Recommendation
+  containsSpoilers Boolean
+  userId String
+  gameId String
+  flaggedBy User[] @relation("FlaggedReviews") // many-to-many relationship with User model, junction table
+  user User @relation(fields: [userId], references: [id])
+  game Game @relation(fields: [gameId], references: [id])
+  likedBy User[] @relation("LikedReviews") // many-to-many relationship with User model, junction table
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Tag {
+  id String @id @default(cuid())
+  name String @unique
+  games Game[] // many-to-many relationship with Game model
+}
+
+model Follow {
+  followerId String
+  followingId String
+  createdAt DateTime @default(now())
+  follower User @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
+  @@id([followerId, followingId]) //composite primary key
 }
