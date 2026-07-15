@@ -230,3 +230,97 @@ body {
       box-shadow 0.3s ease;
   }
 }
+
+/* Admin shell */
+.admin-shell {
+  min-height: 100%;
+  background:
+    radial-gradient(ellipse 60% 40% at 0% 0%, rgba(88, 5, 14, 0.22), transparent 55%),
+    radial-gradient(ellipse 50% 35% at 100% 100%, rgba(27, 11, 11, 0.5), transparent 50%),
+    #070000;
+}
+
+.admin-sidebar {
+  background: rgba(10, 0, 0, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  border-radius: 0.625rem;
+  padding: 0.7rem 0.85rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.55);
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.admin-nav-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.admin-nav-item[data-active="true"] {
+  background: linear-gradient(
+    90deg,
+    rgba(88, 5, 14, 0.55),
+    rgba(88, 5, 14, 0.18)
+  );
+  color: #fff;
+  box-shadow: inset 3px 0 0 #8e0314;
+}
+
+.admin-panel {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+}
+
+.admin-panel :is(.glass-card) {
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.admin-panel :is(.glass-card):hover {
+  transform: none;
+}
+
+.admin-input {
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.35);
+  padding: 0.55rem 0.75rem;
+  color: #fff;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.admin-input:focus {
+  border-color: rgba(142, 3, 20, 0.55);
+  box-shadow: 0 0 0 3px rgba(142, 3, 20, 0.15);
+}
+
+.admin-table-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.15s ease;
+}
+
+.admin-table-row:hover {
+  background: rgba(88, 5, 14, 0.14);
+}
+
+.admin-table-row[data-selected="true"] {
+  background: rgba(88, 5, 14, 0.22);
+}
