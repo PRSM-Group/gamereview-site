@@ -60,9 +60,7 @@ export function UsersTab({ gamesById, reviews, setReviews }: UsersTabProps) {
 
   function confirmDeleteReview() {
     if (!pendingDeleteReviewId) return;
-    setReviews((prev) =>
-      prev.filter((r) => r.id !== pendingDeleteReviewId),
-    );
+    setReviews((prev) => prev.filter((r) => r.id !== pendingDeleteReviewId));
     setPendingDeleteReviewId(null);
   }
 
@@ -226,7 +224,7 @@ export function UsersTab({ gamesById, reviews, setReviews }: UsersTabProps) {
                             )
                           }
                         >
-                          Dismiss flags
+                          Dismiss Flags
                         </button>
                       ) : null}
                       <button
@@ -234,7 +232,7 @@ export function UsersTab({ gamesById, reviews, setReviews }: UsersTabProps) {
                         className="glass-button rounded-lg px-3 py-1.5 text-xs text-[#ffb4b4]"
                         onClick={() => setPendingDeleteReviewId(review.id)}
                       >
-                        Delete review
+                        Delete Review
                       </button>
                     </div>
                   </article>

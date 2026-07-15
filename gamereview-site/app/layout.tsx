@@ -19,7 +19,7 @@ const kumbh = Kumbh_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "CRITLINE — Game Reviews",
+  title: "VOXEL",
   description:
     "We play the bugs, endure the grinds, and celebrate the masterpieces so you don't waste your time or money.",
 };
