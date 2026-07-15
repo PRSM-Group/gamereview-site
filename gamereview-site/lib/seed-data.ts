@@ -4,7 +4,15 @@ export const seedGames = [
   {
     id: "game_repo",
     title: "R.E.P.O.",
+    description:
+      "An online co-op horror game with up to 6 players. Locate  valuable, fully physics-based objects and handle them with care as you retrieve and extract to satisfy your creator's desires.",
+    developer: "semiwork",
+    releaseDate: "26 February 2025",
     coverImage: "/images/review-cover.png",
+    bannerImage: "/images/browse-game.png",
+    genres: ["Horror", "Survival", "Action", "Adventure"],
+    tags: ["Co-op", "3D", "Online", "Multiplayer", "Single-player"],
+    platform: "PC via Steam",
     averageRating: 4.8,
     reviewCount: 128,
   },
