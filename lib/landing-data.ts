@@ -1,0 +1,44 @@
+import { seedGames, seedReviews } from "@/lib/seed-data";
+
+export type LandingReview = {
+  id: string;
+  title: string;
+  content: string;
+  rating: number;
+  authorName: string;
+  coverImage: string | null;
+  featured: boolean;
+};
+
+export type LandingGame = {
+  id: string;
+  title: string;
+  coverImage: string | null;
+  averageRating: number;
+  reviewCount: number;
+};
+
+export type LandingData = {
+  featuredReview: LandingReview;
+  recentReviews: LandingReview[];
+  topGames: LandingGame[];
+  fromDatabase: boolean;
+};
+
+function getFallbackData(): LandingData {
+  const reviews = seedReviews.map((review) => ({ ...review }));
+  const featuredReview =
+    reviews.find((review) => review.featured) ?? reviews[0];
+
+  return {
+    featuredReview,
+    recentReviews: reviews.filter((review) => !review.featured).slice(0, 4),
+    topGames: seedGames.map((game) => ({ ...game })),
+    fromDatabase: false,
+  };
+}
+
+export async function getLandingData(): Promise<LandingData> {
+  // Schema not yet aligned with landing page types — use seed data
+  return getFallbackData();
+}

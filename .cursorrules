@@ -22,3 +22,4 @@
 - Write only the specific test case requested; do not generate full test suites.
 - Use existing mock utilities and setups instead of writing new ones from scratch.
 - Keep test data objects minimal. Use the smallest possible payloads to validate behavior.
+- Always ask if you need any clarification before running.
