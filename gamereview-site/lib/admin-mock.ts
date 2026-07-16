@@ -161,7 +161,8 @@ export const initialReviews: MockReview[] = [
   {
     id: "review_3",
     title: "A MASTERCLASS IN TENSION",
-    content: "Combat is spiteful in the best way and the story sticks the landing.",
+    content:
+      "Combat is spiteful in the best way and the story sticks the landing.",
     rating: 5,
     authorId: "user_pixelbruise",
     authorName: "@pixelbruise",
@@ -203,8 +204,6 @@ export function ratingStats(reviews: MockReview[]) {
   }
   const count = reviews.length;
   const average =
-    count === 0
-      ? 0
-      : reviews.reduce((sum, r) => sum + r.rating, 0) / count;
+    count === 0 ? 0 : reviews.reduce((sum, r) => sum + r.rating, 0) / count;
   return { average, count, distribution };
 }
