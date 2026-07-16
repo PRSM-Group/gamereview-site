@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
-import { useFormStatus } from "react-dom";
+import { useMemo, useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { logoutAction } from "@/app/login/actions";
 import { GamesTab } from "@/components/admin/GamesTab";
@@ -18,19 +17,6 @@ import {
 import { SITE_NAME } from "@/lib/seed-data";
 
 type Tab = "users" | "games" | "reviews";
-
-function LogOutButton() {
-  const { pending } = useFormStatus();
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="mt-2.5 flex w-full items-center justify-center rounded-lg px-3 py-2 text-xs font-semibold text-white/80 transition-colors hover:bg-white/5 hover:text-white disabled:opacity-60"
-    >
-      {pending ? "…" : "LOG OUT"}
-    </button>
-  );
-}
 
 const NAV: {
   id: Tab;
@@ -110,6 +96,7 @@ const NAV: {
 ];
 
 export function AdminPanel() {
+  const [logoutPending, startLogout] = useTransition();
   const [tab, setTab] = useState<Tab>("users");
   const [games, setGames] = useState<MockGame[]>(initialGames);
   const [reviews, setReviews] = useState<MockReview[]>(initialReviews);
@@ -178,9 +165,23 @@ export function AdminPanel() {
           >
             ← Back to site
           </Link>
-          <form action={logoutAction}>
-            <LogOutButton />
-          </form>
+          <button
+            type="button"
+            disabled={logoutPending}
+            onClick={() => {
+              startLogout(async () => {
+                try {
+                  await logoutAction();
+                  window.location.assign("/");
+                } catch {
+                  // keep button enabled on failure
+                }
+              });
+            }}
+            className="mt-2.5 flex w-full items-center justify-center rounded-lg px-3 py-2 text-xs font-semibold text-white/80 transition-colors hover:bg-white/5 hover:text-white disabled:opacity-60"
+          >
+            {logoutPending ? "…" : "LOG OUT"}
+          </button>
         </div>
       </aside>
 

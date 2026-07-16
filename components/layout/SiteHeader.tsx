@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
 import type { Session } from "next-auth";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import { logoutAction } from "@/app/login/actions";
 import { SITE_NAME } from "@/lib/seed-data";
 
 const CLOSE_MS = 180;
@@ -14,8 +14,6 @@ export function SiteHeader({
 }: {
   initialSession?: Session | null;
 }) {
-  const router = useRouter();
-  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [closing, setClosing] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -24,9 +22,9 @@ export function SiteHeader({
   const openRef = useRef(false);
   const closingRef = useRef(false);
 
-  const { data: clientSession, status, update } = useSession();
+  const { data: clientSession, status } = useSession();
   const session =
-    status === "unauthenticated"
+    signingOut || status === "unauthenticated"
       ? null
       : (clientSession ?? initialSession);
   const isLoggedIn = Boolean(session?.user);
@@ -39,10 +37,6 @@ export function SiteHeader({
     openRef.current = open;
     closingRef.current = closing;
   }, [open, closing]);
-
-  useEffect(() => {
-    void update();
-  }, [pathname, update]);
 
   function clearCloseTimer() {
     if (closeTimer.current !== null) {
@@ -111,11 +105,9 @@ export function SiteHeader({
     if (signingOut) return;
     setSigningOut(true);
     try {
-      await signOut({ redirect: false });
-      await update();
-      router.refresh();
-      router.push("/");
-    } finally {
+      await logoutAction();
+      window.location.assign("/");
+    } catch {
       setSigningOut(false);
     }
   }

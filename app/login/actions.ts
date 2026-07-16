@@ -3,6 +3,7 @@
 import bcrypt from "bcryptjs";
 import { AuthError } from "next-auth";
 import { signIn, signOut } from "@/lib/auth";
+import { getPostLoginRedirect } from "@/lib/auth/redirects";
 import { prisma } from "@/lib/prisma";
 import { sendUserVerificationEmail } from "@/lib/verification";
 
@@ -21,16 +22,8 @@ function getString(formData: FormData, key: string) {
   return typeof value === "string" ? value : "";
 }
 
-function getSafeCallbackUrl(formData: FormData): string {
-  const raw = getString(formData, "callbackUrl").trim();
-  if (raw.startsWith("/") && !raw.startsWith("//")) {
-    return raw;
-  }
-  return "/";
-}
-
 export async function logoutAction() {
-  await signOut({ redirectTo: "/" });
+  await signOut({ redirect: false });
 }
 
 export async function loginAction(
@@ -71,7 +64,16 @@ export async function loginAction(
         field: "email",
       };
     }
-    return { redirectTo: getSafeCallbackUrl(formData) };
+    const loggedIn = await prisma.user.findUnique({
+      where: { email },
+      select: { role: true },
+    });
+    return {
+      redirectTo: getPostLoginRedirect(
+        getString(formData, "callbackUrl"),
+        loggedIn?.role ?? "USER",
+      ),
+    };
   } catch (error) {
     if (error instanceof AuthError) {
       return {

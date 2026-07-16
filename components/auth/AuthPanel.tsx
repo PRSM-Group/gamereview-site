@@ -1,16 +1,15 @@
 "use client";
 
-import {
-  FormEvent,
-  useState,
-  useTransition,
-  type ReactNode,
-} from "react";
+import { FormEvent, useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { SITE_NAME } from "@/lib/seed-data";
-import { loginAction, resendVerificationAction, signupAction } from "@/app/login/actions";
+import {
+  loginAction,
+  resendVerificationAction,
+  signupAction,
+} from "@/app/login/actions";
 
 type AuthMode = "login" | "signup";
 
@@ -58,6 +57,7 @@ function FieldTipBubble({ message }: { message: string }) {
 
 export function AuthPanel() {
   const router = useRouter();
+  const { update } = useSession();
   const searchParams = useSearchParams();
   const mode: AuthMode =
     searchParams.get("mode") === "signup" ? "signup" : "login";
@@ -70,9 +70,11 @@ export function AuthPanel() {
   function switchMode(next: AuthMode) {
     setTip(null);
     setSuccess(null);
-    router.replace(next === "signup" ? "/login?mode=signup" : "/login", {
-      scroll: false,
-    });
+    const params = new URLSearchParams();
+    if (next === "signup") params.set("mode", "signup");
+    if (callbackUrl) params.set("callbackUrl", callbackUrl);
+    const query = params.toString();
+    router.replace(query ? `/login?${query}` : "/login", { scroll: false });
   }
 
   function findFirstError(form: HTMLFormElement): FieldTip | null {
@@ -156,8 +158,12 @@ export function AuthPanel() {
       }
 
       if (result?.redirectTo) {
+        await update();
         router.refresh();
-        await getSession();
+        if (result.redirectTo.startsWith("/admin")) {
+          window.location.assign(result.redirectTo);
+          return;
+        }
         router.push(result.redirectTo);
       }
     });
@@ -228,7 +234,7 @@ export function AuthPanel() {
         </div>
       </aside>
 
-      <div className="fixed top-10 left-1/2 z-20 -translate-x-1/2 lg:left-[75%] lg:top-30">
+      <div className="fixed top-10 left-1/2 z-20 -translate-x-1/2 lg:left-[75%] lg:top-10">
         <div className="relative inline-grid grid-cols-2 rounded-full border border-white/10 bg-[rgba(7,0,0,0.65)] p-1 backdrop-blur-md">
           <span
             aria-hidden
