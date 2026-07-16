@@ -273,8 +273,16 @@ label.glass-card:hover {
 .admin-shell {
   min-height: 100%;
   background:
-    radial-gradient(ellipse 60% 40% at 0% 0%, rgba(88, 5, 14, 0.22), transparent 55%),
-    radial-gradient(ellipse 50% 35% at 100% 100%, rgba(27, 11, 11, 0.5), transparent 50%),
+    radial-gradient(
+      ellipse 60% 40% at 0% 0%,
+      rgba(88, 5, 14, 0.22),
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse 50% 35% at 100% 100%,
+      rgba(27, 11, 11, 0.5),
+      transparent 50%
+    ),
     #070000;
 }
 
@@ -342,12 +350,57 @@ label.glass-card:hover {
   padding: 0.55rem 0.75rem;
   color: #fff;
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .admin-input:focus {
   border-color: rgba(142, 3, 20, 0.55);
   box-shadow: 0 0 0 3px rgba(142, 3, 20, 0.15);
+}
+
+select.admin-input {
+  appearance: none;
+  cursor: pointer;
+  color-scheme: dark;
+  background-color: rgba(0, 0, 0, 0.35);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%238e0314' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+  padding-right: 2.25rem;
+}
+
+select.admin-input option {
+  background: #1a080a;
+  color: #fff;
+}
+
+select.admin-input option:checked {
+  background: linear-gradient(
+    90deg,
+    rgba(88, 5, 14, 0.85),
+    rgba(142, 3, 20, 0.65)
+  );
+  color: #fff;
+}
+
+.admin-input[type="date"] {
+  color-scheme: dark;
+}
+
+.admin-input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.9;
+  filter: invert(18%) sepia(85%) saturate(4500%) hue-rotate(346deg)
+    brightness(95%) contrast(105%);
+}
+
+.admin-input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  filter: invert(22%) sepia(95%) saturate(5000%) hue-rotate(346deg)
+    brightness(105%) contrast(110%);
 }
 
 .admin-table-row {

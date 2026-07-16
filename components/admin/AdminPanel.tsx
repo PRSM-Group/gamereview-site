@@ -123,7 +123,7 @@ export function AdminPanel() {
           </p>
         </div>
 
-        <nav className="flex flex-1 flex-col gap-1.5 px-3 py-5">
+        <nav className="flex flex-col gap-1.5 px-3 py-5">
           <p className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/30">
             Manage
           </p>
@@ -145,7 +145,7 @@ export function AdminPanel() {
           ))}
         </nav>
 
-        <div className="border-t border-white/8 px-4 py-4">
+        <div className="mt-2 border-t border-white/8 px-4 py-4">
           <div className="flex items-center gap-3 rounded-xl bg-white/[0.03] px-3 py-2.5">
             <div className="flex size-8 items-center justify-center rounded-full bg-[rgba(88,5,14,0.55)] text-xs font-semibold">
               SA
@@ -159,7 +159,7 @@ export function AdminPanel() {
           </div>
           <Link
             href="/"
-            className="mt-3 flex items-center justify-center rounded-lg px-3 py-2 text-xs text-white/45 transition-colors hover:bg-white/5 hover:text-white/80"
+            className="mt-2.5 flex items-center justify-center rounded-lg px-3 py-2 text-xs text-white/45 transition-colors hover:bg-white/5 hover:text-white/80"
           >
             ← Back to site
           </Link>

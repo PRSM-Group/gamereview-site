@@ -140,7 +140,7 @@ export function GamesTab({
               Catalog
             </p>
             <h2 className="mt-1 text-lg font-semibold text-white">
-              {mode === "create" ? "Add game" : "Edit game"}
+              {mode === "create" ? "Add Game" : "Edit Game"}
             </h2>
           </div>
           <button
@@ -402,7 +402,7 @@ export function GamesTab({
           className="glass-button rounded-lg px-4 py-2 text-sm font-medium"
           onClick={openCreate}
         >
-          Add game
+          Add Game
         </button>
       </div>
 
