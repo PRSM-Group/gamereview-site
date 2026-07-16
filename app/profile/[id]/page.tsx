@@ -3,6 +3,7 @@ import { SiteHeaderServer } from "@/components/layout/SiteHeaderServer";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileLikedGames } from "@/components/profile/ProfileLikedGames";
 import { ProfileGameReviewCard } from "@/components/profile/ProfileGameReviewCard";
+// import { UserReviewCard } from "@/components/profile/UserReviewCard";
 
 export default async function ProfilePage({
   params,
@@ -33,7 +34,7 @@ export default async function ProfilePage({
               Recent Reviews
             </h2>
             <a
-              href="#"
+              href={`/profile/${id}/reviews`}
               className="text-xs font-bold tracking-widest text-red-700 hover:text-red-500 transition-colors uppercase"
             >
               View All &gt;
@@ -49,6 +50,7 @@ export default async function ProfilePage({
                   key={review.id}
                   review={review}
                   game={game}
+                  profileId={id}
                 />
               );
             })}

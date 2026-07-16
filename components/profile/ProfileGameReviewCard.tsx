@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 type Review = {
   id: string;
@@ -19,9 +20,11 @@ type Game = {
 export function ProfileGameReviewCard({
   review,
   game,
+  profileId,
 }: {
   review: Review;
   game: Game;
+  profileId: string;
 }) {
   return (
     <div className="glass-card flex flex-col lg:flex-row gap-8 rounded-[15px] pt-6 pb-6 p-10 text-white items-start">
@@ -50,9 +53,9 @@ export function ProfileGameReviewCard({
 
         <p className="text-xs leading-relaxed text-neutral-400 line-clamp-3">
           {review.content}
-          <span className="text-red-700 font-semibold hover:text-red-500 cursor-pointer ml-1">
+          <Link href={`/profile/${profileId}/reviews`} className="text-red-700 font-semibold hover:text-red-500 cursor-pointer ml-1">
             See More
-          </span>
+          </Link>
         </p>
       </div>
     </div>

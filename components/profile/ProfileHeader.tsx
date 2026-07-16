@@ -1,3 +1,5 @@
+import { ProfileIdentity } from "@/components/profile/ProfileIdentity";
+
 type User = {
   displayName: string;
   username: string;
@@ -9,18 +11,12 @@ type User = {
 export function ProfileHeader({ user }: { user: User }) {
   return (
     <div className="space-y-6">
-      {/* avatar + name */}
-      <div className="flex items-center gap-4">
-        <div className="w-24 h-24 rounded-full bg-neutral-300 shrink-0" />
-        <div className="flex flex-col">
-          <h1 className="text-3xl font-extrabold tracking-tight">
-            {user.displayName}
-          </h1>
-          <span className="text-sm text-neutral-500">{user.username}</span>
-        </div>
-      </div>
+      <ProfileIdentity
+        displayName={user.displayName}
+        username={user.username}
+        size="lg"
+      />
 
-      {/* following + follower count */}
       <div className="flex gap-6 text-sm">
         <div>
           <span className="font-bold text-gray-200">{user.following}</span>
@@ -32,7 +28,6 @@ export function ProfileHeader({ user }: { user: User }) {
         </div>
       </div>
 
-      {/* bio */}
       <div className="space-y-2">
         <h2 className="inline-block text-sm font-black tracking-widest uppercase border-b-2 border-white pb-1">
           Bio

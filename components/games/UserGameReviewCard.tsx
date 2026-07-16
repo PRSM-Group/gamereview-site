@@ -56,16 +56,8 @@ export function UserGameReviewCard({ review }: { review: Review }) {
             </span>
           </div>
           <div className="flex gap-0.5 text-xl">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <span
-                key={star}
-                className={
-                  star <= review.rating ? "text-white" : "text-neutral-700"
-                }
-              >
-                ★
-              </span>
-            ))}
+            {"★".repeat(review.rating)}
+            {"☆".repeat(5 - review.rating)}
           </div>
         </div>
 
