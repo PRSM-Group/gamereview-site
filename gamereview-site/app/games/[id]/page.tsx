@@ -1,7 +1,7 @@
 import { seedGames, seedReviews } from "@/lib/seed-data";
 import GameBanner from "@/components/games/GameBanner";
 import GameInfo from "@/components/games/GameInfo";
-import { ReviewCard } from "@/components/ReviewCard";
+import { UserGameReviewCard } from "@/components/games/UserGameReviewCard";
 import { SiteHeader } from "@/components/SiteHeader";
 import Link from "next/link";
 
@@ -36,7 +36,7 @@ export default async function GamePage({
         <GameInfo game={game} />
         <div className="p-8 flex flex-col gap-4">
           {reviews.map((review) => (
-            <ReviewCard key={review.id} review={review} />
+            <UserGameReviewCard key={review.id} review={review} />
           ))}
         </div>
       </div>

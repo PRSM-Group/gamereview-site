@@ -47,20 +47,25 @@ export const seedReviews = [
       "From the opening hours this game refuses to let you breathe. Combat is spiteful in the best way, exploration is rewarding, and the story sticks the landing without sanding off the edges.",
     rating: 5,
     authorName: "@pixelbruise",
+    displayName: "daylight",
+    userName: "danaln",
     coverImage: null,
     featured: true,
     gameId: "game_hollow",
+    status: "Playing",
   },
   {
     id: "review_1",
     title: "THIS IS BADASS!",
     content:
-      "We play the bugs, endure the grinds, and celebrate the masterpieces so you don't waste your time or money. Co-op chaos at its peak — loud, messy, and impossible to put down.",
+      "We play the bugs, endure the grinds, and celebrate the masterpieces so you don’t waste your time or money. We play the bugs, endure the grinds, and celebrate the masterpieces so you don’t waste your bug bug celebrate the masterpieces so you don’t waste your bug bug celebrate the your bug bug I LOOOOOOOVE I LOVE I LOVE I LOVE",
     rating: 5,
-    authorName: "@danaln",
+    displayName: "daylight",
+    userName: "danaln",
     coverImage: "/images/review-cover.png",
     featured: false,
     gameId: "game_repo",
+    status: "Playing",
   },
   {
     id: "review_2",
@@ -68,10 +73,12 @@ export const seedReviews = [
     content:
       "The loop clicks by hour three and never lets go. Builds feel expressive, bosses feel fair, and the soundtrack carries every long session without getting stale.",
     rating: 5,
-    authorName: "@lootwreck",
+    displayName: "daylight",
+    userName: "danaln",
     coverImage: "/images/review-cover.png",
     featured: false,
     gameId: "game_nightfall",
+    status: "Finished",
   },
   {
     id: "review_3",
@@ -79,10 +86,12 @@ export const seedReviews = [
     content:
       "It stumbles in the midgame, but the characters and systems keep pulling you back. If you can push through the rough patches, there is a special campaign waiting underneath.",
     rating: 4,
-    authorName: "@burntcontroller",
+    displayName: "daylight",
+    userName: "danaln",
     coverImage: "/images/review-cover.png",
     featured: false,
     gameId: "game_ember",
+    status: "Dropped",
   },
   {
     id: "review_4",
@@ -90,10 +99,12 @@ export const seedReviews = [
     content:
       "Atmosphere for days, encounters that stay scary, and a pace that respects your time. Not perfect, but it is one of the clearest must-plays on the board right now.",
     rating: 5,
-    authorName: "@slowsave",
+    displayName: "daylight",
+    userName: "danaln",
     coverImage: "/images/review-cover.png",
     featured: false,
     gameId: "game_hollow",
+    status: "Finished",
   },
 ] as const;
 
@@ -103,7 +114,9 @@ export const seedHeroSecondaryReview = {
   content:
     "Short sessions turn into all-nighters. The risk-reward loop is addictive and the co-op screams are worth it.",
   rating: 4,
-  authorName: "@lootwreck",
+  displayName: "daylight",
+  userName: "danaln",
   coverImage: null,
   featured: false,
+  status: "Playing",
 } as const;
