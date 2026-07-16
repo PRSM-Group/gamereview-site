@@ -26,6 +26,10 @@ export function ProfileGameReviewCard({
   game: Game;
   profileId: string;
 }) {
+  const snippet =
+    review.content.length > 180
+      ? `${review.content.slice(0, 180).trimEnd()}... `
+      : `${review.content} `;
   return (
     <div className="glass-card flex flex-col lg:flex-row gap-8 rounded-[15px] pt-6 pb-6 p-10 text-white items-start">
       {/* cover image */}
@@ -51,11 +55,11 @@ export function ProfileGameReviewCard({
           {review.title}
         </h4>
 
-        <p className="text-xs leading-relaxed text-neutral-400 line-clamp-3">
-          {review.content}
-          <Link href={`/profile/${profileId}/reviews`} className="text-red-700 font-semibold hover:text-red-500 cursor-pointer ml-1">
+        <p className="mt-2 font-kumbh text-sm leading-normal text-white">
+          {snippet}
+          <a href="#" className="text-[#8e0314] hover:underline">
             See More
-          </Link>
+          </a>
         </p>
       </div>
     </div>

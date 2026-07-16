@@ -23,7 +23,7 @@ export function ProfileIdentity({
         <h1 className={`${nameSize} font-extrabold tracking-tight`}>
           {displayName}
         </h1>
-        <span className="text-sm text-neutral-500">{username}</span>
+        <span className="text-lg text-neutral-500">{username}</span>
       </div>
     </div>
   );

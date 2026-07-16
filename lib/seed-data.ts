@@ -130,7 +130,7 @@ export const seedUsers = [
   {
     id: "danaln",
     email: "dana.alania@gmail.com",
-    username: "@danaln",
+    username: "danaln",
     displayName: "daylight",
     profileImg: null,
     bio: "WOWOWOWOW BIO im a gaymer girl in a gaymer world life is plastic its fantastic",

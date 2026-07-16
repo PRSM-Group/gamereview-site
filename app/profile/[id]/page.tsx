@@ -41,7 +41,7 @@ export default async function ProfilePage({
             </a>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
             {userReviews.map((review) => {
               const game = seedGames.find((g) => g.id === review.gameId);
               if (!game) return null;
