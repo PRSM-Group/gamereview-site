@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Genre, Platform } from "@prisma/client";
+import { Genre, Platform } from "@/generated/prisma/client";
 
 export const createGameSchema = z.object({
   title: z
@@ -32,3 +32,9 @@ export const createGameSchema = z.object({
     .min(1, { message: "Select at least one tag" })
     .max(10, { message: "You can select up to 10 tags" }),
 });
+
+export type CreateGameInput = z.infer<typeof createGameSchema>;
+
+export const updateGameSchema = createGameSchema;
+
+export type UpdateGameInput = z.infer<typeof updateGameSchema>;

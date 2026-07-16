@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 
-import { Genre, Platform } from "@prisma/client";
+import type { CreateGameInput, UpdateGameInput } from "@/lib/validations/game";
 
 const GAME_INCLUDE = {
   tags: true,
@@ -17,18 +17,6 @@ const GAME_INCLUDE = {
     },
   },
 } as const;
-
-export interface CreateGameInput {
-  title: string;
-  description: string;
-  developer: string;
-  releaseDate: Date;
-  coverImage: string;
-  bannerImage: string;
-  genres: Genre[];
-  platforms: Platform[];
-  tagIds: string[];
-}
 
 export async function getAllGames() {
   return prisma.game.findMany({
@@ -110,6 +98,37 @@ export async function createGame(data: CreateGameInput) {
       //many-to-many relationship w tags
       tags: {
         connect: data.tagIds.map((id) => ({ id })),
+      },
+    },
+    include: GAME_INCLUDE,
+  });
+}
+
+export async function updateGame(id: string, data: UpdateGameInput) {
+  const existingGame = await getGameById(id);
+  if (!existingGame) {
+    throw new Error("Game not found");
+  }
+  let slug = existingGame.slug;
+  if (existingGame.title !== data.title) {
+    // regenerates slug if title has changed
+    slug = await generateUniqueSlug(data.title);
+  }
+  return prisma.game.update({
+    where: { id },
+    data: {
+      title: data.title,
+      slug,
+      description: data.description,
+      developer: data.developer,
+      releaseDate: data.releaseDate,
+      coverImage: data.coverImage,
+      bannerImage: data.bannerImage,
+      genres: data.genres,
+      platforms: data.platforms,
+      tags: {
+        set: [], // disconnect all current tags relationships
+        connect: data.tagIds.map((id) => ({ id })), // connect new tags relationships
       },
     },
     include: GAME_INCLUDE,
