@@ -1,3 +1,4 @@
+import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 
 import type { CreateGameInput, UpdateGameInput } from "@/lib/validations/game";
@@ -18,35 +19,80 @@ const GAME_INCLUDE = {
   },
 } as const;
 
+type GameWithDetails = Prisma.GameGetPayload<{
+  include: typeof GAME_INCLUDE;
+}>;
+
+function calculateAverageRating(
+  reviews: readonly { rating: Prisma.Decimal }[],
+): number {
+  if (reviews.length === 0) return 0;
+  const total = reviews.reduce(
+    (sum, review) => sum + review.rating.toNumber(),
+    0,
+  );
+  return total / reviews.length;
+}
+
+function formatGameDetails(game: GameWithDetails) {
+  return {
+    ...game,
+    reviewCount: game.reviews.length,
+    averageRating: calculateAverageRating(game.reviews),
+    reviews: game.reviews.map((review) => ({
+      ...review,
+      rating: review.rating.toNumber(),
+    })),
+  };
+}
+
 export async function getAllGames() {
-  return prisma.game.findMany({
+  const games = await prisma.game.findMany({
     orderBy: {
       // let postgre do the sorting before returning data
       createdAt: "desc",
     },
-    include: {
-      // to also include data from related tables (findmany is not enough)
-      _count: {
-        select: { reviews: true }, // count number of reviews
+    // to also include data from related tables (findmany is not enough)
+
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      coverImage: true,
+      bannerImage: true,
+      genres: true,
+      reviews: {
+        select: {
+          rating: true,
+        },
       },
     },
   });
+  return games.map(({ reviews, ...game }) => ({
+    // These fields already match the GameCard interface.
+    ...game,
+    // The fetched ratings provide both statistics.
+    reviewCount: reviews.length,
+    averageRating: calculateAverageRating(reviews),
+  }));
 }
 
 export async function getGameById(id: string) {
   // for admin
-  return prisma.game.findUnique({
+  const game = await prisma.game.findUnique({
     where: { id },
     include: GAME_INCLUDE,
   });
+  return game ? formatGameDetails(game) : null;
 }
 
 export async function getGameBySlug(slug: string) {
   // for regular user
-  return prisma.game.findUnique({
+  const game = await prisma.game.findUnique({
     where: { slug },
     include: GAME_INCLUDE,
   });
+  return game ? formatGameDetails(game) : null;
 }
 
 function generateBaseSlug(title: string): string {
@@ -81,7 +127,7 @@ async function generateUniqueSlug(title: string): Promise<string> {
 
 export async function createGame(data: CreateGameInput) {
   const slug = await generateUniqueSlug(data.title);
-  return prisma.game.create({
+  const game = await prisma.game.create({
     data: {
       title: data.title,
       slug,
@@ -102,10 +148,18 @@ export async function createGame(data: CreateGameInput) {
     },
     include: GAME_INCLUDE,
   });
+  return formatGameDetails(game);
 }
 
 export async function updateGame(id: string, data: UpdateGameInput) {
-  const existingGame = await getGameById(id);
+  const existingGame = await prisma.game.findUnique({
+    // so only fields needed will be fetched
+    where: { id },
+    select: {
+      title: true,
+      slug: true,
+    },
+  });
   if (!existingGame) {
     throw new Error("Game not found"); // we will eventually replace this with something like NotFoundError("") once may error handling na
   }
@@ -114,7 +168,7 @@ export async function updateGame(id: string, data: UpdateGameInput) {
     // regenerates slug if title has changed
     slug = await generateUniqueSlug(data.title);
   }
-  return prisma.game.update({
+  const game = await prisma.game.update({
     where: { id },
     data: {
       title: data.title,
@@ -127,15 +181,19 @@ export async function updateGame(id: string, data: UpdateGameInput) {
       genres: data.genres,
       platforms: data.platforms,
       tags: {
-        set: data.tagIds.map((id) => ({ id })), //replaces existing tags with new ones
+        set: data.tagIds.map((tagId) => ({ id: tagId })), //replaces existing tags with new ones
       },
     },
     include: GAME_INCLUDE,
   });
+  return formatGameDetails(game);
 }
 
 export async function deleteGame(id: string) {
-  const existingGame = await getGameById(id);
+  const existingGame = await prisma.game.findUnique({
+    where: { id },
+    select: { id: true },
+  });
   if (!existingGame) {
     throw new Error("Game not found");
   }

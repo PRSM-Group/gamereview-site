@@ -1,12 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import {
-  createGame,
-  deleteGame,
-  getGameById,
-  updateGame,
-} from "@/services/game.service";
+import { createGame, deleteGame, updateGame } from "@/services/game.service";
 import {
   createGameSchema,
   type CreateGameInput,
