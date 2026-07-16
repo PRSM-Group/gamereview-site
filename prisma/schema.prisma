@@ -43,32 +43,32 @@ enum Recommendation {
 }
 
 model User {
-  id             String   @id @default(cuid())
-  email          String   @unique
-  username       String   @unique
-  displayName    String
-  passwordHash   String
-  emailVerified DateTime?
+  id                 String              @id @default(cuid())
+  email              String              @unique
+  username           String              @unique
+  displayName        String
+  passwordHash       String
+  emailVerified      DateTime?
   verificationTokens VerificationTaken[]
-  profileImage   String?
-  bio            String?
-  role           UserRole @default(USER)
-  reviews        Review[] // one-to-many relationship with Review model
-  likedGames     Game[]   @relation("LikedGames") // many-to-many relationship with Game model, junction table
-  likedReviews   Review[] @relation("LikedReviews") // many-to-many relationship with Review model
-  followers      Follow[] @relation("Following")
-  following      Follow[] @relation("Followers")
-  flaggedReviews Review[] @relation("FlaggedReviews")
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  profileImage       String?
+  bio                String?
+  role               UserRole            @default(USER)
+  reviews            Review[] // one-to-many relationship with Review model
+  likedGames         Game[]              @relation("LikedGames") // many-to-many relationship with Game model, junction table
+  likedReviews       Review[]            @relation("LikedReviews") // many-to-many relationship with Review model
+  followers          Follow[]            @relation("Following")
+  following          Follow[]            @relation("Followers")
+  flaggedReviews     Review[]            @relation("FlaggedReviews")
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 }
 
 model VerificationTaken {
-  id String  @id @default(cuid())
-  token String @unique
-  userId String
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
   expiresAt DateTime
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
   @@index([userId])
@@ -76,7 +76,7 @@ model VerificationTaken {
 
 model Game {
   id          String     @id @default(cuid())
-  title       String
+  title       String     @unique
   slug        String     @unique
   description String
   developer   String
