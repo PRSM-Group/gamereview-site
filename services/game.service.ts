@@ -107,7 +107,7 @@ export async function createGame(data: CreateGameInput) {
 export async function updateGame(id: string, data: UpdateGameInput) {
   const existingGame = await getGameById(id);
   if (!existingGame) {
-    throw new Error("Game not found");
+    throw new Error("Game not found"); // we will eventually replace this with something like NotFoundError("") once may error handling na
   }
   let slug = existingGame.slug;
   if (existingGame.title !== data.title) {
@@ -127,8 +127,7 @@ export async function updateGame(id: string, data: UpdateGameInput) {
       genres: data.genres,
       platforms: data.platforms,
       tags: {
-        set: [], // disconnect all current tags relationships
-        connect: data.tagIds.map((id) => ({ id })), // connect new tags relationships
+        set: data.tagIds.map((id) => ({ id })), //replaces existing tags with new ones
       },
     },
     include: GAME_INCLUDE,
