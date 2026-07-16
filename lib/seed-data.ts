@@ -125,3 +125,19 @@ export const seedHeroSecondaryReview = {
   featured: false,
   status: "Playing",
 } as const;
+
+export const seedUsers = [
+  {
+    id: "danaln",
+    email: "dana.alania@gmail.com",
+    username: "@danaln",
+    displayName: "daylight",
+    profileImg: null,
+    bio: "WOWOWOWOW BIO im a gaymer girl in a gaymer world life is plastic its fantastic",
+    reviews: ["review_1"],
+    followers: 67,
+    following: 69,
+    likedGameIds: ["game_repo", "game_nightfall"],
+    reviewIds: ["review_1", "review_2", "review_3"],
+  },
+];
