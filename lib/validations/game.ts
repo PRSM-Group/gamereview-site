@@ -18,8 +18,11 @@ export const createGameSchema = z.object({
     .min(1, { message: "Developer is required" })
     .max(100, { message: "Developer must not exceed 100 characters" }),
   releaseDate: z.coerce.date(),
-  coverImage: z.string(),
-  bannerImage: z.string(),
+  coverImage: z.string().trim().min(1, { message: "Cover image is required" }),
+  bannerImage: z
+    .string()
+    .trim()
+    .min(1, { message: "Banner image is required" }),
   genres: z
     .array(z.nativeEnum(Genre))
     .min(1, { message: "Select at least one genre" })

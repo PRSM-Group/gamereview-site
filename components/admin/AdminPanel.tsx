@@ -3,20 +3,22 @@
 import { useMemo, useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { logoutAction } from "@/app/login/actions";
-import { GamesTab } from "@/components/admin/GamesTab";
+import {
+  GamesTab,
+  type AdminGame,
+  type AdminTag,
+} from "@/components/admin/GamesTab";
 import { ReviewsTab } from "@/components/admin/ReviewsTab";
 import { UsersTab } from "@/components/admin/UsersTab";
-import {
-  initialGames,
-  initialReviews,
-  initialTags,
-  type MockGame,
-  type MockReview,
-  type MockTag,
-} from "@/lib/admin-mock";
+import { initialReviews, type MockReview } from "@/lib/admin-mock";
 import { SITE_NAME } from "@/lib/seed-data";
 
 type Tab = "users" | "games" | "reviews";
+
+type AdminPanelProps = {
+  games: AdminGame[];
+  tags: AdminTag[];
+};
 
 const NAV: {
   id: Tab;
@@ -95,12 +97,10 @@ const NAV: {
   },
 ];
 
-export function AdminPanel() {
+export function AdminPanel({ games, tags }: AdminPanelProps) {
   const [logoutPending, startLogout] = useTransition();
   const [tab, setTab] = useState<Tab>("users");
-  const [games, setGames] = useState<MockGame[]>(initialGames);
   const [reviews, setReviews] = useState<MockReview[]>(initialReviews);
-  const [tags, setTags] = useState<MockTag[]>(initialTags);
 
   const gamesById = useMemo(
     () =>
@@ -233,13 +233,7 @@ export function AdminPanel() {
               setReviewsAction={setReviews}
             />
           ) : tab === "games" ? (
-            <GamesTab
-              games={games}
-              setGamesAction={setGames}
-              reviews={reviews}
-              tags={tags}
-              setTagsAction={setTags}
-            />
+            <GamesTab games={games} tags={tags} />
           ) : (
             <ReviewsTab
               reviews={reviews}

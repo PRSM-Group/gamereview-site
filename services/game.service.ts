@@ -69,9 +69,39 @@ export async function getAllGames() {
     },
   });
   return games.map(({ reviews, ...game }) => ({
-    // These fields already match the GameCard interface.
+    // Keep the selected game fields and add review statistics.
     ...game,
-    // The fetched ratings provide both statistics.
+    reviewCount: reviews.length,
+    averageRating: calculateAverageRating(reviews),
+  }));
+}
+
+export async function getAdminGames() {
+  const games = await prisma.game.findMany({
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      developer: true,
+      releaseDate: true,
+      coverImage: true,
+      bannerImage: true,
+      genres: true,
+      platforms: true,
+      tags: {
+        select: { id: true },
+      },
+      reviews: {
+        select: { rating: true },
+      },
+    },
+  });
+
+  return games.map(({ tags, reviews, releaseDate, ...game }) => ({
+    ...game,
+    releaseDate: releaseDate.toISOString().slice(0, 10),
+    tagIds: tags.map((tag) => tag.id),
     reviewCount: reviews.length,
     averageRating: calculateAverageRating(reviews),
   }));
@@ -104,7 +134,10 @@ function generateBaseSlug(title: string): string {
     .replace(/^-+|-+$/g, ""); // remove hyphens from start and end
 }
 
-async function generateUniqueSlug(title: string): Promise<string> {
+async function generateUniqueSlug(
+  title: string,
+  excludedGameId?: string,
+): Promise<string> {
   const baseSlug = generateBaseSlug(title);
   let slug = baseSlug;
   let count = 2;
@@ -112,17 +145,16 @@ async function generateUniqueSlug(title: string): Promise<string> {
   while (true) {
     const existingGame = await prisma.game.findUnique({
       where: { slug },
+      select: { id: true },
     });
 
-    if (!existingGame) {
-      break;
+    if (!existingGame || existingGame.id === excludedGameId) {
+      return slug;
     }
 
     slug = `${baseSlug}-${count}`;
     count++;
   }
-
-  return slug;
 }
 
 export async function createGame(data: CreateGameInput) {
@@ -166,7 +198,7 @@ export async function updateGame(id: string, data: UpdateGameInput) {
   let slug = existingGame.slug;
   if (existingGame.title !== data.title) {
     // regenerates slug if title has changed
-    slug = await generateUniqueSlug(data.title);
+    slug = await generateUniqueSlug(data.title, id);
   }
   const game = await prisma.game.update({
     where: { id },

@@ -1,10 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { MockTag } from "@/lib/admin-mock";
 
 type GameTagSelectorProps = {
-  tags: MockTag[];
+  tags: { id: string; name: string }[];
   selectedIds: string[];
   onChange: (tagIds: string[]) => void;
 };
@@ -42,7 +41,7 @@ export function GameTagSelector({
   if (tags.length === 0) {
     return (
       <p className="mt-2 text-xs text-white/35">
-        No tags in catalog — add tags in the sidebar.
+        No tags are available in the database.
       </p>
     );
   }

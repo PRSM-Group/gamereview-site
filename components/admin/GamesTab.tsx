@@ -1,57 +1,74 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import {
+  createGameAction,
+  deleteGameAction,
+  updateGameAction,
+} from "@/actions/game";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { GameTagSelector } from "@/components/admin/GameTagSelector";
-import { TagCatalogPanel } from "@/components/admin/TagCatalogPanel";
 import {
-  emptyGameForm,
-  GENRES,
-  PLATFORMS,
-  ratingStats,
-  type Genre,
-  type MockGame,
-  type MockReview,
-  type MockTag,
-  type Platform,
-} from "@/lib/admin-mock";
+  Genre,
+  Platform,
+  type Genre as GenreValue,
+  type Platform as PlatformValue,
+} from "@/generated/prisma/browser";
 
-type GamesTabProps = {
-  games: MockGame[];
-  setGamesAction: React.Dispatch<React.SetStateAction<MockGame[]>>;
-  reviews: MockReview[];
-  tags: MockTag[];
-  setTagsAction: React.Dispatch<React.SetStateAction<MockTag[]>>;
+const GENRES = Object.values(Genre);
+const PLATFORMS = Object.values(Platform);
+
+export type AdminGame = {
+  id: string;
+  title: string;
+  description: string;
+  developer: string;
+  releaseDate: string;
+  coverImage: string;
+  bannerImage: string;
+  genres: GenreValue[];
+  platforms: PlatformValue[];
+  tagIds: string[];
+  reviewCount: number;
+  averageRating: number;
 };
 
-type FormState = Omit<MockGame, "id" | "deleted">;
+export type AdminTag = {
+  id: string;
+  name: string;
+};
 
-async function fileToObjectUrl(file: File | null): Promise<string | null> {
-  if (!file) return null;
-  return URL.createObjectURL(file);
+type GamesTabProps = {
+  games: AdminGame[];
+  tags: AdminTag[];
+};
+
+type FormState = Omit<AdminGame, "id" | "reviewCount" | "averageRating">;
+
+function emptyGameForm(): FormState {
+  return {
+    title: "",
+    description: "",
+    developer: "",
+    releaseDate: "",
+    coverImage: "",
+    bannerImage: "",
+    genres: [Genre.ACTION],
+    platforms: [Platform.PC],
+    tagIds: [],
+  };
 }
 
-export function GamesTab({
-  games,
-  setGamesAction,
-  reviews,
-  tags,
-  setTagsAction,
-}: GamesTabProps) {
+export function GamesTab({ games, tags }: GamesTabProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [mode, setMode] = useState<"list" | "create" | "edit">("list");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(emptyGameForm());
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
-
-  const activeGames = useMemo(() => games.filter((g) => !g.deleted), [games]);
-
-  const gameReviews = useMemo(
-    () => reviews.filter((r) => r.gameId === editingId),
-    [reviews, editingId],
-  );
-
-  const stats = ratingStats(gameReviews);
+  const editingGame = games.find((game) => game.id === editingId);
 
   function openCreate() {
     setMode("create");
@@ -59,7 +76,7 @@ export function GamesTab({
     setForm(emptyGameForm());
   }
 
-  function openEdit(game: MockGame) {
+  function openEdit(game: AdminGame) {
     setMode("edit");
     setEditingId(game.id);
     setForm({
@@ -69,7 +86,7 @@ export function GamesTab({
       releaseDate: game.releaseDate,
       coverImage: game.coverImage,
       bannerImage: game.bannerImage,
-      genre: game.genre,
+      genres: [...game.genres],
       platforms: [...game.platforms],
       tagIds: [...game.tagIds],
     });
@@ -81,7 +98,20 @@ export function GamesTab({
     setForm(emptyGameForm());
   }
 
-  function togglePlatform(platform: Platform) {
+  function toggleGenre(genre: GenreValue) {
+    setForm((previous) => {
+      const selected = previous.genres.includes(genre);
+
+      return {
+        ...previous,
+        genres: selected
+          ? previous.genres.filter((item) => item !== genre)
+          : [...previous.genres, genre],
+      };
+    });
+  }
+
+  function togglePlatform(platform: PlatformValue) {
     setForm((prev) => {
       const has = prev.platforms.includes(platform);
       return {
@@ -93,42 +123,77 @@ export function GamesTab({
     });
   }
 
-  async function onImageChange(
-    field: "coverImage" | "bannerImage",
-    file: File | null,
-  ) {
-    const url = await fileToObjectUrl(file);
-    setForm((prev) => ({ ...prev, [field]: url }));
-  }
-
   function saveGame() {
-    if (!form.title.trim() || !form.developer.trim() || !form.releaseDate) {
-      setAlertMessage("Title, developer, and release date are required.");
+    if (
+      !form.title.trim() ||
+      !form.description.trim() ||
+      !form.developer.trim() ||
+      !form.releaseDate ||
+      !form.coverImage.trim() ||
+      !form.bannerImage.trim()
+    ) {
+      setAlertMessage("Complete all game and image fields.");
+      return;
+    }
+    if (form.genres.length === 0) {
+      setAlertMessage("Select at least one genre.");
       return;
     }
     if (form.platforms.length === 0) {
       setAlertMessage("Select at least one platform.");
       return;
     }
-
-    if (mode === "create") {
-      const id = `game_${Date.now().toString(36)}`;
-      setGamesAction((prev) => [{ id, deleted: false, ...form }, ...prev]);
-    } else if (editingId) {
-      setGamesAction((prev) =>
-        prev.map((g) => (g.id === editingId ? { ...g, ...form } : g)),
-      );
+    if (form.tagIds.length === 0) {
+      setAlertMessage("Select at least one tag.");
+      return;
     }
-    closeEditor();
+
+    startTransition(async () => {
+      try {
+        const data = {
+          ...form,
+          releaseDate: new Date(`${form.releaseDate}T00:00:00`),
+        };
+        const result =
+          mode === "create"
+            ? await createGameAction(data)
+            : editingId
+              ? await updateGameAction(editingId, data)
+              : null;
+
+        if (!result?.success) {
+          setAlertMessage(result?.message ?? "Unable to save the game.");
+          return;
+        }
+
+        closeEditor();
+        router.refresh();
+      } catch {
+        setAlertMessage("Unable to save the game.");
+      }
+    });
   }
 
   function confirmDelete() {
     if (!deleteId) return;
-    setGamesAction((prev) =>
-      prev.map((g) => (g.id === deleteId ? { ...g, deleted: true } : g)),
-    );
-    if (editingId === deleteId) closeEditor();
-    setDeleteId(null);
+
+    const id = deleteId;
+    startTransition(async () => {
+      try {
+        const result = await deleteGameAction(id);
+
+        if (!result.success) {
+          setAlertMessage(result.message);
+          return;
+        }
+
+        if (editingId === id) closeEditor();
+        setDeleteId(null);
+        router.refresh();
+      } catch {
+        setAlertMessage("Unable to delete the game.");
+      }
+    });
   }
 
   if (mode !== "list") {
@@ -195,22 +260,29 @@ export function GamesTab({
                   }
                 />
               </label>
-              <label className="block text-xs text-white/45">
-                Genre
-                <select
-                  className="admin-input mt-1.5"
-                  value={form.genre}
-                  onChange={(e) =>
-                    setForm({ ...form, genre: e.target.value as Genre })
-                  }
-                >
-                  {GENRES.map((genre) => (
-                    <option key={genre} value={genre}>
-                      {genre}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <div className="md:col-span-2">
+                <p className="text-xs text-white/45">Genres</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {GENRES.map((genre) => {
+                    const active = form.genres.includes(genre);
+
+                    return (
+                      <button
+                        key={genre}
+                        type="button"
+                        className={`rounded-lg border px-3 py-1.5 text-xs transition-colors ${
+                          active
+                            ? "border-[#8e0314] bg-[rgba(88,5,14,0.4)] text-white"
+                            : "border-white/10 text-white/50 hover:border-white/25"
+                        }`}
+                        onClick={() => toggleGenre(genre)}
+                      >
+                        {genre}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
               <div className="md:col-span-2">
                 <p className="text-xs text-white/45">Platforms</p>
@@ -247,13 +319,13 @@ export function GamesTab({
               </div>
 
               <label className="block text-xs text-white/45">
-                Cover image
+                Cover image URL
                 <input
-                  type="file"
-                  accept="image/*"
-                  className="mt-2 block w-full text-xs text-white/50 file:mr-3 file:rounded-md file:border-0 file:bg-[rgba(88,5,14,0.45)] file:px-3 file:py-1.5 file:text-xs file:text-white"
+                  className="admin-input mt-1.5"
+                  value={form.coverImage}
+                  placeholder="/images/cover.jpg or https://…"
                   onChange={(e) =>
-                    onImageChange("coverImage", e.target.files?.[0] ?? null)
+                    setForm({ ...form, coverImage: e.target.value })
                   }
                 />
                 {form.coverImage ? (
@@ -267,13 +339,13 @@ export function GamesTab({
               </label>
 
               <label className="block text-xs text-white/45">
-                Banner image
+                Banner image URL
                 <input
-                  type="file"
-                  accept="image/*"
-                  className="mt-2 block w-full text-xs text-white/50 file:mr-3 file:rounded-md file:border-0 file:bg-[rgba(88,5,14,0.45)] file:px-3 file:py-1.5 file:text-xs file:text-white"
+                  className="admin-input mt-1.5"
+                  value={form.bannerImage}
+                  placeholder="/images/banner.jpg or https://…"
                   onChange={(e) =>
-                    onImageChange("bannerImage", e.target.files?.[0] ?? null)
+                    setForm({ ...form, bannerImage: e.target.value })
                   }
                 />
                 {form.bannerImage ? (
@@ -290,14 +362,20 @@ export function GamesTab({
             <div className="mt-6 flex flex-wrap gap-2 border-t border-white/8 pt-5">
               <button
                 type="button"
+                disabled={isPending}
                 className="glass-button rounded-lg px-5 py-2.5 text-sm font-medium"
                 onClick={saveGame}
               >
-                {mode === "create" ? "Create game" : "Save changes"}
+                {isPending
+                  ? "Saving…"
+                  : mode === "create"
+                    ? "Create game"
+                    : "Save changes"}
               </button>
               {mode === "edit" && editingId ? (
                 <button
                   type="button"
+                  disabled={isPending}
                   className="glass-button rounded-lg px-5 py-2.5 text-sm text-[#ffb4b4]"
                   onClick={() => setDeleteId(editingId)}
                 >
@@ -315,7 +393,7 @@ export function GamesTab({
                     Avg rating
                   </p>
                   <p className="mt-2 text-3xl font-semibold tracking-tight">
-                    {stats.average.toFixed(1)}
+                    {(editingGame?.averageRating ?? 0).toFixed(1)}
                   </p>
                 </div>
                 <div className="rounded-xl border border-white/8 bg-black/25 p-4">
@@ -323,53 +401,19 @@ export function GamesTab({
                     Reviews
                   </p>
                   <p className="mt-2 text-3xl font-semibold tracking-tight">
-                    {stats.count}
+                    {editingGame?.reviewCount ?? 0}
                   </p>
                 </div>
               </div>
-
-              <div className="rounded-xl border border-white/8 bg-black/25 p-4">
-                <p className="text-[11px] uppercase tracking-[0.12em] text-white/35">
-                  Distribution
-                </p>
-                <div className="mt-3 space-y-2">
-                  {[5, 4, 3, 2, 1].map((n) => {
-                    const count =
-                      stats.distribution[n as 1 | 2 | 3 | 4 | 5] ?? 0;
-                    const pct =
-                      stats.count === 0 ? 0 : (count / stats.count) * 100;
-                    return (
-                      <div key={n} className="flex items-center gap-3 text-xs">
-                        <span className="w-6 text-white/45">{n}★</span>
-                        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/5">
-                          <div
-                            className="h-full rounded-full bg-[#8e0314]"
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                        <span className="w-4 text-right text-white/40">
-                          {count}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <TagCatalogPanel tags={tags} setTagsAction={setTagsAction} />
             </div>
-          ) : (
-            <div className="space-y-4">
-              <TagCatalogPanel tags={tags} setTagsAction={setTagsAction} />
-            </div>
-          )}
+          ) : null}
         </div>
 
         <ConfirmDialog
           open={Boolean(deleteId)}
           title="Delete game"
-          message="This will hide the game from the admin list (soft delete). Continue?"
-          confirmLabel="Soft delete"
+          message="This permanently deletes the game. Continue?"
+          confirmLabel="Delete"
           destructive
           onCancel={() => setDeleteId(null)}
           onConfirm={confirmDelete}
@@ -393,9 +437,7 @@ export function GamesTab({
       <div className="flex items-end justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold text-white">Game Catalog</h2>
-          <p className="mt-0.5 text-xs text-white/40">
-            {activeGames.length} active titles
-          </p>
+          <p className="mt-0.5 text-xs text-white/40">{games.length} titles</p>
         </div>
         <button
           type="button"
@@ -407,8 +449,7 @@ export function GamesTab({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {activeGames.map((game) => {
-          const count = reviews.filter((r) => r.gameId === game.id).length;
+        {games.map((game) => {
           return (
             <article
               key={game.id}
@@ -429,7 +470,7 @@ export function GamesTab({
               </div>
               <div className="p-4">
                 <p className="text-[11px] uppercase tracking-[0.1em] text-white/35">
-                  {game.genre} · {count} reviews
+                  {game.genres.join(" · ")} · {game.reviewCount} reviews
                 </p>
                 <p className="mt-2 line-clamp-2 text-sm text-white/60">
                   {game.description}
@@ -462,8 +503,8 @@ export function GamesTab({
       <ConfirmDialog
         open={Boolean(deleteId)}
         title="Delete game"
-        message="This will hide the game from the admin list (soft delete). Continue?"
-        confirmLabel="Soft delete"
+        message="This permanently deletes the game. Continue?"
+        confirmLabel="Delete"
         destructive
         onCancel={() => setDeleteId(null)}
         onConfirm={confirmDelete}
