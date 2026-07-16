@@ -29,7 +29,7 @@ export default async function GamePage({
           &lt; Return
         </Link>
       </div>
-      <div className="mx-auto max-w-[1280px] px-6 pb-16 pt-2 md:px-[113px] md:pt-2">
+      <div className="mx-auto px-6 pb-16 pt-2 md:px-[113px] md:pt-2">
         <GameBanner
           bannerImage={"bannerImage" in game ? game.bannerImage : ""}
         />
