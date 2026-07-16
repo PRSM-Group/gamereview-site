@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
+import { useFormStatus } from "react-dom";
 import Link from "next/link";
+import { logoutAction } from "@/app/login/actions";
 import { GamesTab } from "@/components/admin/GamesTab";
 import { ReviewsTab } from "@/components/admin/ReviewsTab";
 import { UsersTab } from "@/components/admin/UsersTab";
@@ -16,6 +18,19 @@ import {
 import { SITE_NAME } from "@/lib/seed-data";
 
 type Tab = "users" | "games" | "reviews";
+
+function LogOutButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="mt-2.5 flex w-full items-center justify-center rounded-lg px-3 py-2 text-xs font-semibold text-white/80 transition-colors hover:bg-white/5 hover:text-white disabled:opacity-60"
+    >
+      {pending ? "…" : "LOG OUT"}
+    </button>
+  );
+}
 
 const NAV: {
   id: Tab;
@@ -159,10 +174,13 @@ export function AdminPanel() {
           </div>
           <Link
             href="/"
-            className="mt-2.5 flex items-center justify-center rounded-lg px-3 py-2 text-xs text-white/45 transition-colors hover:bg-white/5 hover:text-white/80"
+            className="flex items-center justify-center rounded-lg px-3 py-2 text-xs text-white/45 transition-colors hover:bg-white/5 hover:text-white/80"
           >
             ← Back to site
           </Link>
+          <form action={logoutAction}>
+            <LogOutButton />
+          </form>
         </div>
       </aside>
 

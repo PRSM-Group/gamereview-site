@@ -25,7 +25,10 @@ export function SiteHeader({
   const closingRef = useRef(false);
 
   const { data: clientSession, status, update } = useSession();
-  const session = clientSession ?? initialSession;
+  const session =
+    status === "unauthenticated"
+      ? null
+      : (clientSession ?? initialSession);
   const isLoggedIn = Boolean(session?.user);
   const role = session?.user?.role;
   const isLoading = status === "loading" && !initialSession;
@@ -107,10 +110,14 @@ export function SiteHeader({
   async function handleSignOut() {
     if (signingOut) return;
     setSigningOut(true);
-    await signOut({ redirect: false });
-    router.refresh();
-    router.push("/");
-    setSigningOut(false);
+    try {
+      await signOut({ redirect: false });
+      await update();
+      router.refresh();
+      router.push("/");
+    } finally {
+      setSigningOut(false);
+    }
   }
 
   return (

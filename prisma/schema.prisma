@@ -48,6 +48,8 @@ model User {
   username       String   @unique
   displayName    String
   passwordHash   String
+  emailVerified DateTime?
+  verificationTokens VerificationTaken[]
   profileImage   String?
   bio            String?
   role           UserRole @default(USER)
@@ -59,6 +61,17 @@ model User {
   flaggedReviews Review[] @relation("FlaggedReviews")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+model VerificationTaken {
+  id String  @id @default(cuid())
+  token String @unique
+  userId String
+  expiresAt DateTime
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Game {

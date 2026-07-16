@@ -10,7 +10,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSession } from "next-auth/react";
 import { SITE_NAME } from "@/lib/seed-data";
-import { loginAction, signupAction } from "@/app/login/actions";
+import { loginAction, resendVerificationAction, signupAction } from "@/app/login/actions";
 
 type AuthMode = "login" | "signup";
 
@@ -63,10 +63,13 @@ export function AuthPanel() {
     searchParams.get("mode") === "signup" ? "signup" : "login";
   const callbackUrl = searchParams.get("callbackUrl") ?? "";
   const [tip, setTip] = useState<FieldTip | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [resendPending, startResendTransition] = useTransition();
 
   function switchMode(next: AuthMode) {
     setTip(null);
+    setSuccess(null);
     router.replace(next === "signup" ? "/login?mode=signup" : "/login", {
       scroll: false,
     });
@@ -134,6 +137,7 @@ export function AuthPanel() {
     const formData = new FormData(form);
 
     startTransition(async () => {
+      setSuccess(null);
       const result =
         mode === "login"
           ? await loginAction({}, formData)
@@ -145,10 +149,37 @@ export function AuthPanel() {
         return;
       }
 
+      if (result?.success) {
+        setTip(null);
+        setSuccess(result.success);
+        return;
+      }
+
       if (result?.redirectTo) {
         router.refresh();
         await getSession();
         router.push(result.redirectTo);
+      }
+    });
+  }
+
+  function onResendVerification(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+
+    startResendTransition(async () => {
+      setSuccess(null);
+      const result = await resendVerificationAction({}, formData);
+
+      if (result?.error && result.field) {
+        setTip({ field: result.field, message: result.error });
+        return;
+      }
+
+      if (result?.success) {
+        setTip(null);
+        setSuccess(result.success);
       }
     });
   }
@@ -245,6 +276,15 @@ export function AuthPanel() {
                 : "Join VOXEL and start sharing what you play."}
             </p>
 
+            {success ? (
+              <p
+                role="status"
+                className="mt-6 rounded-lg border border-[#8e0314]/35 bg-[rgba(88,5,14,0.2)] px-4 py-3 text-sm text-[#ffb4b4]"
+              >
+                {success}
+              </p>
+            ) : null}
+
             <form className="mt-8 space-y-4" onSubmit={onSubmit} noValidate>
               {isLogin && callbackUrl ? (
                 <input type="hidden" name="callbackUrl" value={callbackUrl} />
@@ -331,6 +371,32 @@ export function AuthPanel() {
                 {pending ? "Please wait..." : isLogin ? "Log in" : "Sign up"}
               </button>
             </form>
+
+            {isLogin ? (
+              <form
+                className="mt-6 space-y-3 border-t border-white/8 pt-6"
+                onSubmit={onResendVerification}
+              >
+                <p className="text-xs text-white/40">
+                  Didn&apos;t get a verification email?
+                </p>
+                <input
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  className="admin-input"
+                  placeholder="you@email.com"
+                  onChange={() => tip?.field === "email" && setTip(null)}
+                />
+                <button
+                  type="submit"
+                  disabled={resendPending}
+                  className="glass-button flex h-10 w-full items-center justify-center rounded-[10px] font-kumbh text-xs font-semibold uppercase tracking-[0.1em] text-white disabled:opacity-60"
+                >
+                  {resendPending ? "Sending…" : "Resend verification email"}
+                </button>
+              </form>
+            ) : null}
 
             <p className="mt-6 text-center text-sm text-white/40">
               {isLogin ? "New here?" : "Already have an account?"}{" "}

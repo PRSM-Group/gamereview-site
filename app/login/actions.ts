@@ -2,13 +2,15 @@
 
 import bcrypt from "bcryptjs";
 import { AuthError } from "next-auth";
-import { signIn } from "@/lib/auth";
+import { signIn, signOut } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendUserVerificationEmail } from "@/lib/verification";
 
 export type AuthActionState = {
   error?: string;
   field?: "username" | "displayName" | "email" | "password" | "confirmPassword";
   redirectTo?: string;
+  success?: string;
 };
 
 const PASSWORD_RULE =
@@ -27,6 +29,10 @@ function getSafeCallbackUrl(formData: FormData): string {
   return "/";
 }
 
+export async function logoutAction() {
+  await signOut({ redirectTo: "/" });
+}
+
 export async function loginAction(
   _prev: AuthActionState,
   formData: FormData,
@@ -39,6 +45,18 @@ export async function loginAction(
   }
   if (!password) {
     return { error: "Please fill out this field.", field: "password" };
+  }
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (user) {
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (valid && !user.emailVerified) {
+      return {
+        error:
+          "Verify your email before logging in. Check your inbox or resend below.",
+        field: "email",
+      };
+    }
   }
 
   try {
@@ -63,8 +81,6 @@ export async function loginAction(
     }
     throw error;
   }
-
-  return {};
 }
 
 export async function signupAction(
@@ -119,7 +135,7 @@ export async function signupAction(
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
-  await prisma.user.create({
+  const user = await prisma.user.create({
     data: {
       username,
       displayName,
@@ -130,27 +146,50 @@ export async function signupAction(
   });
 
   try {
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
-    if (result?.error) {
-      return {
-        error: "Account created, but sign-in failed. Please log in.",
-        field: "email",
-      };
-    }
-    return { redirectTo: "/" };
-  } catch (error) {
-    if (error instanceof AuthError) {
-      return {
-        error: "Account created, but sign-in failed. Please log in.",
-        field: "email",
-      };
-    }
-    throw error;
+    await sendUserVerificationEmail(user.id);
+  } catch {
+    return {
+      error:
+        "Account created, but we couldn't send the verification email. Use resend below.",
+      field: "email",
+    };
   }
 
-  return {};
+  return {
+    success:
+      "Account created. Check your email for a verification link before logging in.",
+  };
+}
+
+export async function resendVerificationAction(
+  _prev: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const email = getString(formData, "email").trim().toLowerCase();
+
+  if (!email) {
+    return { error: "Enter your email address.", field: "email" };
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { error: "Please enter a valid email address.", field: "email" };
+  }
+
+  const genericSuccess =
+    "If an unverified account exists for that email, we sent a new link.";
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user || user.emailVerified) {
+    return { success: genericSuccess };
+  }
+
+  try {
+    await sendUserVerificationEmail(user.id);
+  } catch {
+    return {
+      error: "Could not send email. Try again later.",
+      field: "email",
+    };
+  }
+
+  return { success: genericSuccess };
 }
