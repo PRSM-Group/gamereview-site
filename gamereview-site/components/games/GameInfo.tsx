@@ -18,7 +18,7 @@ type Game = {
 
 export default function GameInfo({ game }: { game: Game }) {
   return (
-    <div className="flex gap-6 p-8 -mt-16">
+    <div className="flex gap-6 p-8 pb-4 -mt-16">
       {/* left side: poster img */}
       <div className="relative w-40 h-52 flex-shrink-0">
         <Image

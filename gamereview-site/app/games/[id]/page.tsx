@@ -21,20 +21,20 @@ export default async function GamePage({
     <div className="min-h-full bg-[#070000] text-white">
       <SiteHeader />
 
-      <div className="max-w-6xl text-base mx-auto px-4 pt-6 pb-4">
+      <div className="max-w-6xl text-base mx-auto px-4 pt-6 pb-2">
         <Link
           href="/browse"
-          className="text-xs font-bold tracking-widest text-red-700 hover:text-red-500 uppercase transition-colors inline-flex items-center gap-1"
+          className="font-bold tracking-widest text-red-700 hover:text-red-500 uppercase transition-colors inline-flex items-center gap-1"
         >
           &lt; Return
         </Link>
       </div>
-      <div className="mx-auto max-w-[1280px] px-6 pb-16 pt-2 md:px-[113px] md:pt-4">
+      <div className="mx-auto max-w-[1280px] px-6 pb-16 pt-2 md:px-[113px] md:pt-2">
         <GameBanner
           bannerImage={"bannerImage" in game ? game.bannerImage : ""}
         />
         <GameInfo game={game} />
-        <div className="p-8 flex flex-col gap-4">
+        <div className="p-8 pt-2 flex flex-col gap-4">
           {reviews.map((review) => (
             <UserGameReviewCard key={review.id} review={review} />
           ))}

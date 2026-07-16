@@ -13,7 +13,7 @@ type Review = {
 
 export function UserGameReviewCard({ review }: { review: Review }) {
   return (
-    <div className="glass-card flex flex-col lg:flex-row gap-8 rounded-[15px] pt-4 pb-4 p-10 text-white items-start">
+    <div className="glass-card flex flex-col lg:flex-row gap-8 rounded-[15px] pt-6 pb-6 p-10 text-white items-start">
       {/* left side: user info + status */}
       <div className="flex flex-col items-start w-full lg:w-56 shrink-0">
         <div className="flex items-center gap-4 w-full">
