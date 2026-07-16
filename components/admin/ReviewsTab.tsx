@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { deleteReviewAction } from "@/actions/review";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
-import type { MockReview } from "@/lib/admin-mock";
+import type { AdminReview } from "@/lib/review-display";
 
 const REVIEWS_PER_PAGE = 5;
 
 type ReviewsTabProps = {
-  reviews: MockReview[];
+  reviews: AdminReview[];
   gamesById: Record<string, string>;
-  setReviewsAction: React.Dispatch<React.SetStateAction<MockReview[]>>;
 };
 
 type GameSummary = {
@@ -23,15 +24,17 @@ type GameSummary = {
 export function ReviewsTab({
   reviews,
   gamesById,
-  setReviewsAction,
 }: ReviewsTabProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
 
   const gameSummaries = useMemo(() => {
-    const byGame = new Map<string, MockReview[]>();
+    const byGame = new Map<string, AdminReview[]>();
     for (const review of reviews) {
       const list = byGame.get(review.gameId) ?? [];
       list.push(review);
@@ -120,8 +123,21 @@ export function ReviewsTab({
 
   function confirmDelete() {
     if (!pendingDeleteId) return;
-    setReviewsAction((prev) => prev.filter((r) => r.id !== pendingDeleteId));
-    setPendingDeleteId(null);
+
+    const id = pendingDeleteId;
+    startTransition(async () => {
+      try {
+        const result = await deleteReviewAction(id);
+        if (!result.success) {
+          setAlertMessage(result.message);
+          return;
+        }
+        setPendingDeleteId(null);
+        router.refresh();
+      } catch {
+        setAlertMessage("Unable to delete the review.");
+      }
+    });
   }
 
   if (selectedGameId && selectedGame) {
@@ -214,23 +230,9 @@ export function ReviewsTab({
                 </p>
 
                 <div className="mt-5 flex flex-wrap gap-2 border-t border-white/8 pt-4">
-                  {review.flagCount > 0 ? (
-                    <button
-                      type="button"
-                      className="glass-button rounded-lg px-3 py-1.5 text-xs"
-                      onClick={() =>
-                        setReviewsAction((prev) =>
-                          prev.map((r) =>
-                            r.id === review.id ? { ...r, flagCount: 0 } : r,
-                          ),
-                        )
-                      }
-                    >
-                      Dismiss flags
-                    </button>
-                  ) : null}
                   <button
                     type="button"
+                    disabled={isPending}
                     className="glass-button rounded-lg px-3 py-1.5 text-xs text-[#ffb4b4]"
                     onClick={() => setPendingDeleteId(review.id)}
                   >
@@ -291,6 +293,16 @@ export function ReviewsTab({
           destructive
           onCancel={() => setPendingDeleteId(null)}
           onConfirm={confirmDelete}
+        />
+
+        <ConfirmDialog
+          open={Boolean(alertMessage)}
+          mode="alert"
+          title="Error"
+          message={alertMessage ?? ""}
+          confirmLabel="OK"
+          onCancel={() => setAlertMessage(null)}
+          onConfirm={() => setAlertMessage(null)}
         />
       </div>
     );

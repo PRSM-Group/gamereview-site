@@ -20,6 +20,9 @@ const REVIEW_INCLUDE = {
       coverImage: true,
     },
   },
+  flaggedBy: {
+    select: { id: true },
+  },
 } as const;
 
 type ReviewWithDetails = Prisma.ReviewGetPayload<{

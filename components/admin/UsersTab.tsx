@@ -1,26 +1,28 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { deleteReviewAction } from "@/actions/review";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import {
   initialUsers,
   ROLES,
-  type MockReview,
   type MockUser,
   type Role,
 } from "@/lib/admin-mock";
+import type { AdminReview } from "@/lib/review-display";
 
 type UsersTabProps = {
   gamesById: Record<string, string>;
-  reviews: MockReview[];
-  setReviewsAction: React.Dispatch<React.SetStateAction<MockReview[]>>;
+  reviews: AdminReview[];
 };
 
 export function UsersTab({
   gamesById,
   reviews,
-  setReviewsAction,
 }: UsersTabProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [users, setUsers] = useState<MockUser[]>(initialUsers);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [pendingRole, setPendingRole] = useState<{
@@ -31,6 +33,7 @@ export function UsersTab({
   const [pendingDeleteReviewId, setPendingDeleteReviewId] = useState<
     string | null
   >(null);
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
 
   const selected = users.find((u) => u.id === selectedUserId) ?? null;
   const userReviews = useMemo(() => {
@@ -82,8 +85,21 @@ export function UsersTab({
 
   function confirmDeleteReview() {
     if (!pendingDeleteReviewId) return;
-    setReviewsAction((prev) => prev.filter((r) => r.id !== pendingDeleteReviewId));
-    setPendingDeleteReviewId(null);
+
+    const id = pendingDeleteReviewId;
+    startTransition(async () => {
+      try {
+        const result = await deleteReviewAction(id);
+        if (!result.success) {
+          setAlertMessage(result.message);
+          return;
+        }
+        setPendingDeleteReviewId(null);
+        router.refresh();
+      } catch {
+        setAlertMessage("Unable to delete the review.");
+      }
+    });
   }
 
   return (
@@ -236,23 +252,9 @@ export function UsersTab({
                       {review.content}
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {review.flagCount > 0 ? (
-                        <button
-                          type="button"
-                          className="glass-button rounded-lg px-3 py-1.5 text-xs"
-                          onClick={() =>
-                            setReviewsAction((prev) =>
-                              prev.map((r) =>
-                                r.id === review.id ? { ...r, flagCount: 0 } : r,
-                              ),
-                            )
-                          }
-                        >
-                          Dismiss Flags
-                        </button>
-                      ) : null}
                       <button
                         type="button"
+                        disabled={isPending}
                         className="glass-button rounded-lg px-3 py-1.5 text-xs text-[#ffb4b4]"
                         onClick={() => setPendingDeleteReviewId(review.id)}
                       >
@@ -288,6 +290,16 @@ export function UsersTab({
         destructive
         onCancel={() => setPendingDeleteReviewId(null)}
         onConfirm={confirmDeleteReview}
+      />
+
+      <ConfirmDialog
+        open={Boolean(alertMessage)}
+        mode="alert"
+        title="Error"
+        message={alertMessage ?? ""}
+        confirmLabel="OK"
+        onCancel={() => setAlertMessage(null)}
+        onConfirm={() => setAlertMessage(null)}
       />
     </div>
   );

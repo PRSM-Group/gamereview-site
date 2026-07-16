@@ -76,6 +76,34 @@ export async function getAllGames() {
   }));
 }
 
+export async function getBrowseGames() {
+  const games = await prisma.game.findMany({
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      coverImage: true,
+      bannerImage: true,
+      genres: true,
+      tags: { select: { name: true } },
+      reviews: { select: { rating: true } },
+    },
+  });
+
+  return games.map((game) => ({
+    id: game.id,
+    title: game.title,
+    description: game.description,
+    coverImage: game.coverImage,
+    bannerImage: game.bannerImage,
+    rating: calculateAverageRating(game.reviews),
+    reviewCount: game.reviews.length,
+    genre: game.genres[0] ?? "ACTION",
+    tags: game.tags.map((tag) => tag.name),
+  }));
+}
+
 export async function getAdminGames() {
   const games = await prisma.game.findMany({
     orderBy: { createdAt: "desc" },

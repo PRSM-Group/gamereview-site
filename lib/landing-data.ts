@@ -1,3 +1,5 @@
+import { getAllGames } from "@/services/game.service";
+import { getAllReviews } from "@/services/review.service";
 import { seedGames, seedReviews } from "@/lib/seed-data";
 
 export type LandingReview = {
@@ -39,6 +41,53 @@ function getFallbackData(): LandingData {
 }
 
 export async function getLandingData(): Promise<LandingData> {
-  // Schema not yet aligned with landing page types — use seed data
-  return getFallbackData();
+  try {
+    const [reviews, games] = await Promise.all([
+      getAllReviews(),
+      getAllGames(),
+    ]);
+
+    if (reviews.length === 0) {
+      return getFallbackData();
+    }
+
+    const landingReviews: LandingReview[] = reviews.map((review) => ({
+      id: review.id,
+      title: review.heading,
+      content: review.content,
+      rating:
+        typeof review.rating === "number"
+          ? review.rating
+          : Number(review.rating),
+      authorName: `@${review.user.username}`,
+      coverImage: review.game.coverImage,
+      featured: false,
+    }));
+
+    const featuredReview = landingReviews[0];
+    const recentReviews = landingReviews.slice(1, 5);
+
+    const topGames: LandingGame[] =
+      games.length > 0
+        ? [...games]
+            .sort((a, b) => b.reviewCount - a.reviewCount)
+            .slice(0, 4)
+            .map((game) => ({
+              id: game.id,
+              title: game.title,
+              coverImage: game.coverImage,
+              averageRating: game.averageRating,
+              reviewCount: game.reviewCount,
+            }))
+        : seedGames.map((game) => ({ ...game }));
+
+    return {
+      featuredReview,
+      recentReviews,
+      topGames,
+      fromDatabase: true,
+    };
+  } catch {
+    return getFallbackData();
+  }
 }

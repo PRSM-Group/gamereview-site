@@ -10,7 +10,7 @@ import {
 } from "@/components/admin/GamesTab";
 import { ReviewsTab } from "@/components/admin/ReviewsTab";
 import { UsersTab } from "@/components/admin/UsersTab";
-import { initialReviews, type MockReview } from "@/lib/admin-mock";
+import type { AdminReview } from "@/lib/review-display";
 import { SITE_NAME } from "@/lib/seed-data";
 
 type Tab = "users" | "games" | "reviews";
@@ -18,6 +18,7 @@ type Tab = "users" | "games" | "reviews";
 type AdminPanelProps = {
   games: AdminGame[];
   tags: AdminTag[];
+  reviews: AdminReview[];
 };
 
 const NAV: {
@@ -97,10 +98,9 @@ const NAV: {
   },
 ];
 
-export function AdminPanel({ games, tags }: AdminPanelProps) {
+export function AdminPanel({ games, tags, reviews }: AdminPanelProps) {
   const [logoutPending, startLogout] = useTransition();
   const [tab, setTab] = useState<Tab>("users");
-  const [reviews, setReviews] = useState<MockReview[]>(initialReviews);
 
   const gamesById = useMemo(
     () =>
@@ -227,19 +227,11 @@ export function AdminPanel({ games, tags }: AdminPanelProps) {
 
         <main className="admin-panel m-4 flex-1 overflow-auto p-4 md:m-6 md:p-6">
           {tab === "users" ? (
-            <UsersTab
-              gamesById={gamesById}
-              reviews={reviews}
-              setReviewsAction={setReviews}
-            />
+            <UsersTab gamesById={gamesById} reviews={reviews} />
           ) : tab === "games" ? (
             <GamesTab games={games} tags={tags} />
           ) : (
-            <ReviewsTab
-              reviews={reviews}
-              gamesById={gamesById}
-              setReviewsAction={setReviews}
-            />
+            <ReviewsTab reviews={reviews} gamesById={gamesById} />
           )}
         </main>
       </div>

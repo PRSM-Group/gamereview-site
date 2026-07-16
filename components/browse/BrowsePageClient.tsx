@@ -7,11 +7,13 @@ import { FeaturedCarousel } from "@/components/browse/FeaturedCarousel";
 import { GameResultCard } from "@/components/browse/GameResultCard";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import {
-  browseGames,
-  featuredBanners,
+  browseGames as fallbackBrowseGames,
+  featuredBanners as fallbackFeaturedBanners,
   filterAndSortGames,
   GENRES,
   TAGS,
+  type BrowseGame,
+  type FeaturedBanner,
   type Genre,
   type SortOption,
   type Tag,
@@ -24,8 +26,12 @@ const SORT_LABELS: Record<SortOption, string> = {
 
 export function BrowsePageClient({
   initialSession = null,
+  games = fallbackBrowseGames,
+  featuredBanners = fallbackFeaturedBanners,
 }: {
   initialSession?: Session | null;
+  games?: BrowseGame[];
+  featuredBanners?: FeaturedBanner[];
 }) {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortOption>("reviews");
@@ -36,13 +42,13 @@ export function BrowsePageClient({
   const results = useMemo(
     () =>
       filterAndSortGames(
-        browseGames,
+        games,
         query,
         selectedGenres,
         selectedTags,
         sort,
       ),
-    [query, selectedGenres, selectedTags, sort],
+    [games, query, selectedGenres, selectedTags, sort],
   );
 
   function toggleGenre(genre: Genre) {
