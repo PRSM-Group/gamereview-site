@@ -58,8 +58,27 @@ export type MockGame = {
   bannerImage: string | null;
   genre: Genre;
   platforms: Platform[];
+  tagIds: string[];
   deleted: boolean;
 };
+
+export type MockTag = {
+  id: string;
+  name: string;
+};
+
+export const initialTags: MockTag[] = [
+  { id: "tag_coop", name: "Co-op" },
+  { id: "tag_multi", name: "Multiplayer" },
+  { id: "tag_single", name: "Singleplayer" },
+  { id: "tag_indie", name: "Indie" },
+  { id: "tag_early", name: "Early Access" },
+  { id: "tag_story", name: "Story-rich" },
+  { id: "tag_open", name: "Open World" },
+  { id: "tag_comp", name: "Competitive" },
+  { id: "tag_roguelike", name: "Roguelike" },
+  { id: "tag_horror", name: "Horror" },
+];
 
 export const initialUsers: MockUser[] = [
   {
@@ -107,6 +126,7 @@ export const initialGames: MockGame[] = [
     bannerImage: "/images/review-cover.png",
     genre: "HORROR",
     platforms: ["PC"],
+    tagIds: ["tag_coop", "tag_multi", "tag_horror"],
     deleted: false,
   },
   {
@@ -119,6 +139,7 @@ export const initialGames: MockGame[] = [
     bannerImage: "/images/review-cover.png",
     genre: "SHOOTER",
     platforms: ["PC", "PLAYSTATION", "XBOX"],
+    tagIds: ["tag_multi", "tag_comp"],
     deleted: false,
   },
   {
@@ -131,6 +152,7 @@ export const initialGames: MockGame[] = [
     bannerImage: "/images/review-cover.png",
     genre: "ADVENTURE",
     platforms: ["PC", "PLAYSTATION"],
+    tagIds: ["tag_story", "tag_single"],
     deleted: false,
   },
 ];
@@ -193,6 +215,7 @@ export function emptyGameForm(): Omit<MockGame, "id" | "deleted"> {
     bannerImage: null,
     genre: "ACTION",
     platforms: ["PC"],
+    tagIds: [],
   };
 }
 

@@ -3,16 +3,19 @@
 import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { GamesTab } from "@/components/admin/GamesTab";
+import { ReviewsTab } from "@/components/admin/ReviewsTab";
 import { UsersTab } from "@/components/admin/UsersTab";
 import {
   initialGames,
   initialReviews,
+  initialTags,
   type MockGame,
   type MockReview,
+  type MockTag,
 } from "@/lib/admin-mock";
 import { SITE_NAME } from "@/lib/seed-data";
 
-type Tab = "users" | "games";
+type Tab = "users" | "games" | "reviews";
 
 const NAV: {
   id: Tab;
@@ -69,12 +72,33 @@ const NAV: {
       </svg>
     ),
   },
+  {
+    id: "reviews",
+    label: "REVIEWS",
+    icon: (
+      <svg viewBox="0 0 24 24" className="size-5" fill="none" aria-hidden>
+        <path
+          d="M6 4h12a2 2 0 0 1 2 2v14l-4-3-4 3-4-3-4 3V6a2 2 0 0 1 2-2Z"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M9 9h6M9 12.5h4"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        />
+      </svg>
+    ),
+  },
 ];
 
 export function AdminPanel() {
   const [tab, setTab] = useState<Tab>("users");
   const [games, setGames] = useState<MockGame[]>(initialGames);
   const [reviews, setReviews] = useState<MockReview[]>(initialReviews);
+  const [tags, setTags] = useState<MockTag[]>(initialTags);
 
   const gamesById = useMemo(
     () =>
@@ -149,7 +173,11 @@ export function AdminPanel() {
               {active.label}
             </p>
             <h1 className="mt-1 font-kumbh text-xl font-semibold tracking-tight md:text-2xl">
-              {active.id === "users" ? "User Management" : "Game Management"}
+              {active.id === "users"
+                ? "User Management"
+                : active.id === "games"
+                  ? "Game Management"
+                  : "Review Moderation"}
             </h1>
           </div>
           <Link
@@ -185,11 +213,18 @@ export function AdminPanel() {
               reviews={reviews}
               setReviewsAction={setReviews}
             />
-          ) : (
+          ) : tab === "games" ? (
             <GamesTab
               games={games}
               setGamesAction={setGames}
               reviews={reviews}
+              tags={tags}
+              setTagsAction={setTags}
+            />
+          ) : (
+            <ReviewsTab
+              reviews={reviews}
+              gamesById={gamesById}
               setReviewsAction={setReviews}
             />
           )}

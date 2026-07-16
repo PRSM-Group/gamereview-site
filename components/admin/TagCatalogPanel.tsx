@@ -1,0 +1,193 @@
+"use client";
+
+import { useState } from "react";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+import type { MockTag } from "@/lib/admin-mock";
+
+type TagCatalogPanelProps = {
+  tags: MockTag[];
+  setTagsAction: React.Dispatch<React.SetStateAction<MockTag[]>>;
+};
+
+export function TagCatalogPanel({ tags, setTagsAction }: TagCatalogPanelProps) {
+  const [newName, setNewName] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
+
+  function addTag() {
+    const name = newName.trim();
+    if (!name) {
+      setAlertMessage("Enter a tag name.");
+      return;
+    }
+    if (tags.some((t) => t.name.toLowerCase() === name.toLowerCase())) {
+      setAlertMessage("A tag with this name already exists.");
+      return;
+    }
+    setTagsAction((prev) => [
+      ...prev,
+      { id: `tag_${Date.now().toString(36)}`, name },
+    ]);
+    setNewName("");
+  }
+
+  function startEdit(tag: MockTag) {
+    setEditingId(tag.id);
+    setEditName(tag.name);
+  }
+
+  function saveEdit() {
+    if (!editingId) return;
+    const name = editName.trim();
+    if (!name) {
+      setAlertMessage("Tag name cannot be empty.");
+      return;
+    }
+    if (
+      tags.some(
+        (t) =>
+          t.id !== editingId && t.name.toLowerCase() === name.toLowerCase(),
+      )
+    ) {
+      setAlertMessage("A tag with this name already exists.");
+      return;
+    }
+    setTagsAction((prev) =>
+      prev.map((t) => (t.id === editingId ? { ...t, name } : t)),
+    );
+    setEditingId(null);
+    setEditName("");
+  }
+
+  function confirmDelete() {
+    if (!deleteId) return;
+    setTagsAction((prev) => prev.filter((t) => t.id !== deleteId));
+    if (editingId === deleteId) {
+      setEditingId(null);
+      setEditName("");
+    }
+    setDeleteId(null);
+  }
+
+  return (
+    <>
+      <div className="rounded-xl border border-white/8 bg-black/25 p-4">
+        <h4 className="text-sm font-semibold text-white">Tag Catalog</h4>
+        <div className="mt-4 flex gap-2">
+          <input
+            className="admin-input flex-1"
+            placeholder="New tag name"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addTag();
+              }
+            }}
+          />
+          <button
+            type="button"
+            className="glass-button shrink-0 rounded-lg px-3 py-2 text-xs font-medium"
+            onClick={addTag}
+          >
+            Add
+          </button>
+        </div>
+
+        <ul className="mt-4 max-h-[280px] space-y-2 overflow-y-auto">
+          {tags.length === 0 ? (
+            <li className="text-xs text-white/40">No tags yet.</li>
+          ) : (
+            tags.map((tag) => (
+              <li
+                key={tag.id}
+                className="flex items-center gap-2 rounded-lg border border-white/6 bg-white/[0.02] px-3 py-2"
+              >
+                {editingId === tag.id ? (
+                  <>
+                    <input
+                      className="admin-input flex-1 py-1.5 text-xs"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          saveEdit();
+                        }
+                        if (e.key === "Escape") {
+                          setEditingId(null);
+                          setEditName("");
+                        }
+                      }}
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      className="text-[11px] text-white/70 hover:text-white"
+                      onClick={saveEdit}
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      className="text-[11px] text-white/40 hover:text-white/70"
+                      onClick={() => {
+                        setEditingId(null);
+                        setEditName("");
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span className="flex-1 text-sm text-white/85">
+                      {tag.name}
+                    </span>
+                    <button
+                      type="button"
+                      className="text-[11px] text-white/45 hover:text-white/80"
+                      onClick={() => startEdit(tag)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="text-[11px] text-[#ffb4b4]"
+                      onClick={() => setDeleteId(tag.id)}
+                    >
+                      Delete
+                    </button>
+                  </>
+                )}
+              </li>
+            ))
+          )}
+        </ul>
+      </div>
+
+      <ConfirmDialog
+        open={Boolean(deleteId)}
+        title="Delete tag"
+        message="Remove this tag from the global catalog? Games using it will need reassignment later."
+        confirmLabel="Delete tag"
+        destructive
+        onCancel={() => setDeleteId(null)}
+        onConfirm={confirmDelete}
+      />
+
+      <ConfirmDialog
+        open={Boolean(alertMessage)}
+        mode="alert"
+        title="Tag catalog"
+        message={alertMessage ?? ""}
+        confirmLabel="OK"
+        onCancel={() => setAlertMessage(null)}
+        onConfirm={() => setAlertMessage(null)}
+      />
+    </>
+  );
+}

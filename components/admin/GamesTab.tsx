@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+import { GameTagSelector } from "@/components/admin/GameTagSelector";
+import { TagCatalogPanel } from "@/components/admin/TagCatalogPanel";
 import {
   emptyGameForm,
   GENRES,
@@ -10,6 +12,7 @@ import {
   type Genre,
   type MockGame,
   type MockReview,
+  type MockTag,
   type Platform,
 } from "@/lib/admin-mock";
 
@@ -17,7 +20,8 @@ type GamesTabProps = {
   games: MockGame[];
   setGamesAction: React.Dispatch<React.SetStateAction<MockGame[]>>;
   reviews: MockReview[];
-  setReviewsAction: React.Dispatch<React.SetStateAction<MockReview[]>>;
+  tags: MockTag[];
+  setTagsAction: React.Dispatch<React.SetStateAction<MockTag[]>>;
 };
 
 type FormState = Omit<MockGame, "id" | "deleted">;
@@ -31,15 +35,13 @@ export function GamesTab({
   games,
   setGamesAction,
   reviews,
-  setReviewsAction,
+  tags,
+  setTagsAction,
 }: GamesTabProps) {
   const [mode, setMode] = useState<"list" | "create" | "edit">("list");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(emptyGameForm());
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [pendingDeleteReviewId, setPendingDeleteReviewId] = useState<
-    string | null
-  >(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
 
   const activeGames = useMemo(() => games.filter((g) => !g.deleted), [games]);
@@ -69,6 +71,7 @@ export function GamesTab({
       bannerImage: game.bannerImage,
       genre: game.genre,
       platforms: [...game.platforms],
+      tagIds: [...game.tagIds],
     });
   }
 
@@ -126,14 +129,6 @@ export function GamesTab({
     );
     if (editingId === deleteId) closeEditor();
     setDeleteId(null);
-  }
-
-  function confirmDeleteReview() {
-    if (!pendingDeleteReviewId) return;
-    setReviewsAction((prev) =>
-      prev.filter((r) => r.id !== pendingDeleteReviewId),
-    );
-    setPendingDeleteReviewId(null);
   }
 
   if (mode !== "list") {
@@ -238,6 +233,17 @@ export function GamesTab({
                     );
                   })}
                 </div>
+              </div>
+
+              <div className="md:col-span-2">
+                <p className="text-xs text-white/45">Tags</p>
+                <GameTagSelector
+                  tags={tags}
+                  selectedIds={form.tagIds}
+                  onChange={(tagIds) =>
+                    setForm((prev) => ({ ...prev, tagIds }))
+                  }
+                />
               </div>
 
               <label className="block text-xs text-white/45">
@@ -350,48 +356,11 @@ export function GamesTab({
                 </div>
               </div>
 
-              <div className="rounded-xl border border-white/8 bg-black/25 p-4">
-                <h4 className="text-sm font-semibold text-white">Reviews</h4>
-                <div className="mt-3 space-y-3">
-                  {gameReviews.length === 0 ? (
-                    <p className="text-xs text-white/40">No reviews yet.</p>
-                  ) : (
-                    gameReviews.map((review) => (
-                      <article
-                        key={review.id}
-                        className="rounded-lg border border-white/6 bg-white/[0.02] p-3"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <h5 className="text-sm font-medium text-white">
-                              {review.title}
-                            </h5>
-                            <p className="mt-0.5 text-[11px] text-white/35">
-                              {review.authorName} · {review.rating}/5
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            className="text-[11px] text-[#ffb4b4]"
-                            onClick={() =>
-                              setPendingDeleteReviewId(review.id)
-                            }
-                          >
-                            Delete
-                          </button>
-                        </div>
-                        <p className="mt-2 text-xs leading-relaxed text-white/65">
-                          {review.content}
-                        </p>
-                      </article>
-                    ))
-                  )}
-                </div>
-              </div>
+              <TagCatalogPanel tags={tags} setTagsAction={setTagsAction} />
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-white/10 bg-black/15 p-6 text-sm text-white/35">
-              Save the game to attach reviews and rating stats.
+            <div className="space-y-4">
+              <TagCatalogPanel tags={tags} setTagsAction={setTagsAction} />
             </div>
           )}
         </div>
@@ -404,16 +373,6 @@ export function GamesTab({
           destructive
           onCancel={() => setDeleteId(null)}
           onConfirm={confirmDelete}
-        />
-
-        <ConfirmDialog
-          open={Boolean(pendingDeleteReviewId)}
-          title="Delete review"
-          message="This review will be permanently removed. This cannot be undone."
-          confirmLabel="Delete review"
-          destructive
-          onCancel={() => setPendingDeleteReviewId(null)}
-          onConfirm={confirmDeleteReview}
         />
 
         <ConfirmDialog
@@ -433,7 +392,7 @@ export function GamesTab({
     <div className="space-y-5">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold text-white">Game catalog</h2>
+          <h2 className="text-sm font-semibold text-white">Game Catalog</h2>
           <p className="mt-0.5 text-xs text-white/40">
             {activeGames.length} active titles
           </p>

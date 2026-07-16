@@ -46,7 +46,7 @@ export async function getAllGames() {
 }
 
 export async function getGameById(id: string) {
-  // for adming
+  // for admin
   return prisma.game.findUnique({
     where: { id },
     include: GAME_INCLUDE,
@@ -74,7 +74,21 @@ async function generateUniqueSlug(title: string): Promise<string> {
   const baseSlug = generateBaseSlug(title);
   let slug = baseSlug;
   let count = 2;
-  while (true) {}
+
+  while (true) {
+    const existingGame = await prisma.game.findUnique({
+      where: { slug },
+    });
+
+    if (!existingGame) {
+      break;
+    }
+
+    slug = `${baseSlug}-${count}`;
+    count++;
+  }
+
+  return slug;
 }
 
 export async function createGame(data: CreateGameInput) {

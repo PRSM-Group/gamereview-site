@@ -33,8 +33,26 @@ export function UsersTab({
   >(null);
 
   const selected = users.find((u) => u.id === selectedUserId) ?? null;
-  const userReviews = useMemo(
-    () => reviews.filter((r) => r.authorId === selectedUserId),
+  const userReviews = useMemo(() => {
+    return reviews
+      .filter((r) => r.authorId === selectedUserId)
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      )
+      .slice(0, 3);
+  }, [reviews, selectedUserId]);
+
+  const totalUserReviews = useMemo(
+    () => reviews.filter((r) => r.authorId === selectedUserId).length,
+    [reviews, selectedUserId],
+  );
+
+  const totalUserFlags = useMemo(
+    () =>
+      reviews
+        .filter((r) => r.authorId === selectedUserId)
+        .reduce((s, r) => s + r.flagCount, 0),
     [reviews, selectedUserId],
   );
 
@@ -183,8 +201,10 @@ export function UsersTab({
                   {selected.displayName} · {selected.email}
                 </p>
                 <p className="mt-2 text-xs text-white/40">
-                  {userReviews.length} reviews ·{" "}
-                  {userReviews.reduce((s, r) => s + r.flagCount, 0)} flags
+                  {totalUserReviews} reviews · {totalUserFlags} flags
+                  {totalUserReviews > userReviews.length
+                    ? ` · showing ${userReviews.length} most recent`
+                    : ""}
                 </p>
               </div>
               <button
