@@ -134,3 +134,13 @@ export async function updateGame(id: string, data: UpdateGameInput) {
     include: GAME_INCLUDE,
   });
 }
+
+export async function deleteGame(id: string) {
+  const existingGame = await getGameById(id);
+  if (!existingGame) {
+    throw new Error("Game not found");
+  }
+  return prisma.game.delete({
+    where: { id },
+  });
+}
