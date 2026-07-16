@@ -76,3 +76,28 @@ async function generateUniqueSlug(title: string): Promise<string> {
   let count = 2;
   while (true) {}
 }
+
+export async function createGame(data: CreateGameInput) {
+  const slug = await generateUniqueSlug(data.title);
+  return prisma.game.create({
+    data: {
+      title: data.title,
+      slug,
+      description: data.description,
+      developer: data.developer,
+      releaseDate: data.releaseDate,
+      coverImage: data.coverImage,
+      bannerImage: data.bannerImage,
+
+      //enums
+      genres: data.genres,
+      platforms: data.platforms,
+
+      //many-to-many relationship w tags
+      tags: {
+        connect: data.tagIds.map((id) => ({ id })),
+      },
+    },
+    include: GAME_INCLUDE,
+  });
+}
