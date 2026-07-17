@@ -65,7 +65,7 @@ export function SiteHeader({
   type MenuItem = { label: string; href: string };
   const menuItems: MenuItem[] = [
     { label: "BROWSE", href: "/browse" },
-    { label: "REVIEWS", href: "#" },
+    { label: "REVIEWS", href: "/reviews" },
   ];
   if (role === "ADMIN") {
     menuItems.push({ label: "ADMIN DASHBOARD", href: "/admin" });

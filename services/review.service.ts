@@ -23,6 +23,9 @@ const REVIEW_INCLUDE = {
   flaggedBy: {
     select: { id: true },
   },
+  _count: {
+    select: { likedBy: true },
+  },
 } as const;
 
 type ReviewWithDetails = Prisma.ReviewGetPayload<{

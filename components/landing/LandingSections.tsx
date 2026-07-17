@@ -22,12 +22,12 @@ export function RecentReviewsSection({
         <h2 className="font-kumbh text-[28px] font-bold text-white md:text-[32px]">
           RECENT REVIEWS
         </h2>
-        <a
-          href="#"
+        <Link
+          href="/reviews"
           className="shrink-0 font-kumbh text-sm tracking-[0.2em] text-[#8e0314] transition-colors hover:text-[#b00a1c] md:text-base"
         >
           VIEW MORE &gt;
-        </a>
+        </Link>
       </div>
 
       <div className="grid gap-5 md:grid-cols-2 md:gap-6">
