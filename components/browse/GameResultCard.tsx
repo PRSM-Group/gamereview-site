@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { StarRating } from "@/components/ui/StarRating";
 import type { BrowseGame } from "@/lib/browse-mock";
+import { resolveImageSrc } from "@/lib/image-src";
 
 type GameResultCardProps = {
   game: BrowseGame;
@@ -13,7 +14,7 @@ export function GameResultCard({ game }: GameResultCardProps) {
     <article className="flex overflow-hidden rounded-[12px] bg-[rgba(88,5,14,0.41)] transition-colors hover:bg-[rgba(88,5,14,0.55)]">
       <div className="relative w-[140px] shrink-0 self-stretch sm:w-[257px]">
         <Image
-          src={game.coverImage}
+          src={resolveImageSrc(game.coverImage)}
           alt=""
           fill
           className="object-cover"

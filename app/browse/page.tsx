@@ -7,6 +7,7 @@ import {
   type Tag,
 } from "@/lib/browse-mock";
 import { BrowsePageClient } from "@/components/browse/BrowsePageClient";
+import { resolveImageSrc } from "@/lib/image-src";
 import { getBrowseGames } from "@/services/game.service";
 
 export const metadata: Metadata = {
@@ -32,7 +33,7 @@ export default async function BrowsePage() {
           id: game.id,
           title: game.title,
           subtitle: game.description.slice(0, 100),
-          image: game.bannerImage || game.coverImage,
+          image: resolveImageSrc(game.bannerImage || game.coverImage),
           gameId: game.id,
         }))
       : fallbackFeaturedBanners;

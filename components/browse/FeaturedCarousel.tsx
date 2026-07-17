@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import type { FeaturedBanner } from "@/lib/browse-mock";
+import { resolveImageSrc } from "@/lib/image-src";
 
 const INTERVAL_MS = 4500;
 
@@ -38,7 +40,7 @@ export function FeaturedCarousel({ banners }: FeaturedCarouselProps) {
             aria-hidden={!active}
           >
             <Image
-              src={banner.image}
+              src={resolveImageSrc(banner.image)}
               alt=""
               fill
               priority={i === 0}
@@ -53,12 +55,12 @@ export function FeaturedCarousel({ banners }: FeaturedCarouselProps) {
               <p className="mt-2 max-w-xl font-kumbh text-sm text-white/75 md:text-base">
                 {banner.subtitle}
               </p>
-              <a
-                href="#"
+              <Link
+                href={`/games/${banner.gameId}`}
                 className="glass-button mt-4 inline-flex rounded-[10px] px-4 py-2 text-sm font-semibold text-white"
               >
                 View Game
-              </a>
+              </Link>
             </div>
           </div>
         );
