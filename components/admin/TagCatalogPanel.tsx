@@ -1,15 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import {
+  createTagAction,
+  deleteTagAction,
+  updateTagAction,
+} from "@/actions/tag";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
-import type { MockTag } from "@/lib/admin-mock";
+import type { TagSummary } from "@/services/tag.service";
 
 type TagCatalogPanelProps = {
-  tags: MockTag[];
-  setTagsAction: React.Dispatch<React.SetStateAction<MockTag[]>>;
+  tags: TagSummary[];
 };
 
-export function TagCatalogPanel({ tags, setTagsAction }: TagCatalogPanelProps) {
+export function TagCatalogPanel({ tags }: TagCatalogPanelProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -26,14 +33,22 @@ export function TagCatalogPanel({ tags, setTagsAction }: TagCatalogPanelProps) {
       setAlertMessage("A tag with this name already exists.");
       return;
     }
-    setTagsAction((prev) => [
-      ...prev,
-      { id: `tag_${Date.now().toString(36)}`, name },
-    ]);
-    setNewName("");
+    startTransition(async () => {
+      try {
+        const result = await createTagAction({ name });
+        if (!result.success) {
+          setAlertMessage(result.message);
+          return;
+        }
+        setNewName("");
+        router.refresh();
+      } catch {
+        setAlertMessage("Unable to create the tag.");
+      }
+    });
   }
 
-  function startEdit(tag: MockTag) {
+  function startEdit(tag: TagSummary) {
     setEditingId(tag.id);
     setEditName(tag.name);
   }
@@ -54,21 +69,42 @@ export function TagCatalogPanel({ tags, setTagsAction }: TagCatalogPanelProps) {
       setAlertMessage("A tag with this name already exists.");
       return;
     }
-    setTagsAction((prev) =>
-      prev.map((t) => (t.id === editingId ? { ...t, name } : t)),
-    );
-    setEditingId(null);
-    setEditName("");
+    startTransition(async () => {
+      try {
+        const result = await updateTagAction(editingId, { name });
+        if (!result.success) {
+          setAlertMessage(result.message);
+          return;
+        }
+        setEditingId(null);
+        setEditName("");
+        router.refresh();
+      } catch {
+        setAlertMessage("Unable to update the tag.");
+      }
+    });
   }
 
   function confirmDelete() {
     if (!deleteId) return;
-    setTagsAction((prev) => prev.filter((t) => t.id !== deleteId));
-    if (editingId === deleteId) {
-      setEditingId(null);
-      setEditName("");
-    }
-    setDeleteId(null);
+    const id = deleteId;
+    startTransition(async () => {
+      try {
+        const result = await deleteTagAction(id);
+        if (!result.success) {
+          setAlertMessage(result.message);
+          return;
+        }
+        if (editingId === id) {
+          setEditingId(null);
+          setEditName("");
+        }
+        setDeleteId(null);
+        router.refresh();
+      } catch {
+        setAlertMessage("Unable to delete the tag.");
+      }
+    });
   }
 
   return (
@@ -90,10 +126,11 @@ export function TagCatalogPanel({ tags, setTagsAction }: TagCatalogPanelProps) {
           />
           <button
             type="button"
+            disabled={isPending}
             className="glass-button shrink-0 rounded-lg px-3 py-2 text-xs font-medium"
             onClick={addTag}
           >
-            Add
+            {isPending ? "Saving…" : "Add"}
           </button>
         </div>
 
@@ -126,6 +163,7 @@ export function TagCatalogPanel({ tags, setTagsAction }: TagCatalogPanelProps) {
                     />
                     <button
                       type="button"
+                      disabled={isPending}
                       className="text-[11px] text-white/70 hover:text-white"
                       onClick={saveEdit}
                     >
@@ -133,6 +171,7 @@ export function TagCatalogPanel({ tags, setTagsAction }: TagCatalogPanelProps) {
                     </button>
                     <button
                       type="button"
+                      disabled={isPending}
                       className="text-[11px] text-white/40 hover:text-white/70"
                       onClick={() => {
                         setEditingId(null);
@@ -149,6 +188,7 @@ export function TagCatalogPanel({ tags, setTagsAction }: TagCatalogPanelProps) {
                     </span>
                     <button
                       type="button"
+                      disabled={isPending}
                       className="text-[11px] text-white/45 hover:text-white/80"
                       onClick={() => startEdit(tag)}
                     >
@@ -156,6 +196,7 @@ export function TagCatalogPanel({ tags, setTagsAction }: TagCatalogPanelProps) {
                     </button>
                     <button
                       type="button"
+                      disabled={isPending}
                       className="text-[11px] text-[#ffb4b4]"
                       onClick={() => setDeleteId(tag.id)}
                     >

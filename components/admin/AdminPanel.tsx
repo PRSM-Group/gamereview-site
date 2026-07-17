@@ -5,13 +5,14 @@ import Link from "next/link";
 import { logoutAction } from "@/app/login/actions";
 import { GamesTab } from "@/components/admin/GamesTab";
 import { ReviewsTab } from "@/components/admin/ReviewsTab";
+import { TagCatalogPanel } from "@/components/admin/TagCatalogPanel";
 import { UsersTab } from "@/components/admin/UsersTab";
 import type { AdminReview } from "@/lib/review-display";
 import { SITE_NAME } from "@/lib/seed-data";
 import type { GameSummary } from "@/services/game.service";
 import type { TagSummary } from "@/services/tag.service";
 
-type Tab = "users" | "games" | "reviews";
+type Tab = "users" | "games" | "tags" | "reviews";
 
 type AdminPanelProps = {
   games: GameSummary[];
@@ -71,6 +72,21 @@ const NAV: {
           strokeWidth="1.6"
           strokeLinecap="round"
         />
+      </svg>
+    ),
+  },
+  {
+    id: "tags",
+    label: "TAGS",
+    icon: (
+      <svg viewBox="0 0 24 24" className="size-5" fill="none" aria-hidden>
+        <path
+          d="M4 5h7l9 9-6 6-9-9V5Z"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinejoin="round"
+        />
+        <circle cx="8.5" cy="8.5" r="1.25" fill="currentColor" />
       </svg>
     ),
   },
@@ -194,7 +210,9 @@ export function AdminPanel({ games, tags, reviews }: AdminPanelProps) {
                 ? "User Management"
                 : active.id === "games"
                   ? "Game Management"
-                  : "Review Moderation"}
+                  : active.id === "tags"
+                    ? "Tag Management"
+                    : "Review Moderation"}
             </h1>
           </div>
           <Link
@@ -228,6 +246,8 @@ export function AdminPanel({ games, tags, reviews }: AdminPanelProps) {
             <UsersTab gamesById={gamesById} reviews={reviews} />
           ) : tab === "games" ? (
             <GamesTab games={games} tags={tags} />
+          ) : tab === "tags" ? (
+            <TagCatalogPanel tags={tags} />
           ) : (
             <ReviewsTab reviews={reviews} gamesById={gamesById} />
           )}
