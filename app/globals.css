@@ -23,6 +23,13 @@ body {
   color: var(--foreground);
 }
 
+html {
+  scroll-behavior: smooth;
+  @media (prefers-reduced-motion: reduce) {
+    scroll-behavior: auto;
+  }
+}
+
 @keyframes fade-up {
   from {
     opacity: 0;
