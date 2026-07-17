@@ -22,9 +22,7 @@ function getString(formData: FormData, key: string) {
   return typeof value === "string" ? value : "";
 }
 
-function appUrl() {
-  return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-}
+import { getAppUrl, getAuthCallbackUrl } from "@/lib/auth/config";
 
 function toState(result: { message: string; field: AuthActionState["field"] }) {
   return { error: result.message, field: result.field };
@@ -195,7 +193,7 @@ export async function resendVerificationAction(
 ): Promise<AuthActionState> {
   const email = getString(formData, "email").trim().toLowerCase();
   const redirectOrigin =
-    getString(formData, "redirectOrigin").replace(/\/$/, "") || appUrl();
+    getString(formData, "redirectOrigin").replace(/\/$/, "") || getAppUrl();
 
   if (!email) {
     return { error: "Enter your email address.", field: "email" };
@@ -210,7 +208,7 @@ export async function resendVerificationAction(
       type: "signup",
       email,
       options: {
-        emailRedirectTo: `${redirectOrigin}/auth/callback`,
+        emailRedirectTo: getAuthCallbackUrl(redirectOrigin),
       },
     });
 
