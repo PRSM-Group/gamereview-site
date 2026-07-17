@@ -220,7 +220,7 @@ export function AuthPanel() {
         email,
         username,
         displayName,
-        emailVerified: data.user.email_confirmed_at,
+        emailVerified: data.user.email_confirmed_at ?? null,
       });
 
       if (result?.error && result.field) {
