@@ -8,7 +8,19 @@ export const metadata: Metadata = {
   description: "Search, sort, and filter game reviews on VOXEL.",
 };
 
-export default async function BrowsePage() {
+export default async function BrowsePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ sort?: string | string[] }>;
+}) {
+  const { sort } = await searchParams;
+  const initialSort = sort === "rating" ? "rating" : "reviews";
   const [session, games] = await Promise.all([auth(), getAllGames()]);
-  return <BrowsePageClient initialSession={session} games={games} />;
+  return (
+    <BrowsePageClient
+      initialSession={session}
+      initialSort={initialSort}
+      games={games}
+    />
+  );
 }

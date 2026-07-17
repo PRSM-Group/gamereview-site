@@ -14,6 +14,7 @@ const GENRES = Object.values(Genre);
 
 type BrowseProps = {
   initialSession?: Session | null;
+  initialSort?: SortOption;
   games: GameSummary[];
 };
 
@@ -24,10 +25,11 @@ const SORT_LABELS: Record<SortOption, string> = {
 
 export function BrowsePageClient({
   initialSession = null,
+  initialSort = "reviews",
   games,
 }: BrowseProps) {
   const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<SortOption>("reviews");
+  const [sort, setSort] = useState<SortOption>(initialSort);
   const [sortOpen, setSortOpen] = useState(false);
   const [selectedGenres, setSelectedGenres] = useState<GenreValue[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);

@@ -1,6 +1,8 @@
 import Image from "next/image";
+import Link from "next/link";
 import type { LandingGame } from "@/lib/landing-data";
 import { StarRating } from "@/components/ui/StarRating";
+import { resolveImageSrc } from "@/lib/image-src";
 
 type TopGameCardProps = {
   game: LandingGame;
@@ -8,14 +10,19 @@ type TopGameCardProps = {
 
 export function TopGameCard({ game }: TopGameCardProps) {
   return (
-    <article className="glass-card overflow-hidden rounded-[15px]">
+    <Link
+      href={`/games/${game.slug}`}
+      className="glass-card block overflow-hidden rounded-[15px] transition-transform hover:-translate-y-1"
+      aria-label={`View ${game.title}`}
+    >
       <div className="relative aspect-[3/4] w-full overflow-hidden">
         {game.coverImage ? (
           <Image
-            src={game.coverImage}
+            src={resolveImageSrc(game.coverImage)}
             alt={game.title}
             fill
             className="object-cover"
+            unoptimized
             sizes="(max-width: 768px) 50vw, 25vw"
           />
         ) : (
@@ -34,6 +41,6 @@ export function TopGameCard({ game }: TopGameCardProps) {
           </span>
         </div>
       </div>
-    </article>
+    </Link>
   );
 }

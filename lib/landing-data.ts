@@ -14,6 +14,7 @@ export type LandingReview = {
 
 export type LandingGame = {
   id: string;
+  slug: string;
   title: string;
   coverImage: string | null;
   averageRating: number;
@@ -35,7 +36,17 @@ function getFallbackData(): LandingData {
   return {
     featuredReview,
     recentReviews: reviews.filter((review) => !review.featured).slice(0, 4),
-    topGames: seedGames.map((game) => ({ ...game })),
+    topGames: [...seedGames]
+      .sort(
+        (a, b) =>
+          b.averageRating - a.averageRating ||
+          b.reviewCount - a.reviewCount,
+      )
+      .slice(0, 8)
+      .map((game) => ({
+        ...game,
+        slug: game.id.replace(/^game_/, ""),
+      })),
     fromDatabase: false,
   };
 }
@@ -46,10 +57,6 @@ export async function getLandingData(): Promise<LandingData> {
       getAllReviews(),
       getAllGames(),
     ]);
-
-    if (reviews.length === 0) {
-      return getFallbackData();
-    }
 
     const landingReviews: LandingReview[] = reviews.map((review) => ({
       id: review.id,
@@ -64,28 +71,37 @@ export async function getLandingData(): Promise<LandingData> {
       featured: false,
     }));
 
-    const featuredReview = landingReviews[0];
-    const recentReviews = landingReviews.slice(1, 5);
+    const fallback = getFallbackData();
+    const featuredReview = landingReviews[0] ?? fallback.featuredReview;
+    const recentReviews =
+      landingReviews.length > 0
+        ? landingReviews.slice(1, 5)
+        : fallback.recentReviews;
 
     const topGames: LandingGame[] =
       games.length > 0
         ? [...games]
-            .sort((a, b) => b.reviewCount - a.reviewCount)
-            .slice(0, 4)
+            .sort(
+              (a, b) =>
+                b.averageRating - a.averageRating ||
+                b.reviewCount - a.reviewCount,
+            )
+            .slice(0, 8)
             .map((game) => ({
               id: game.id,
+              slug: game.slug,
               title: game.title,
               coverImage: game.coverImage,
               averageRating: game.averageRating,
               reviewCount: game.reviewCount,
             }))
-        : seedGames.map((game) => ({ ...game }));
+        : fallback.topGames;
 
     return {
       featuredReview,
       recentReviews,
       topGames,
-      fromDatabase: true,
+      fromDatabase: reviews.length > 0 || games.length > 0,
     };
   } catch {
     return getFallbackData();

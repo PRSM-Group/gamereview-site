@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { LandingGame, LandingReview } from "@/lib/landing-data";
 import { ReviewCard } from "@/components/landing/ReviewCard";
 import { TopGameCard } from "@/components/landing/TopGameCard";
@@ -45,12 +46,12 @@ export function TopGamesSection({ games }: { games: LandingGame[] }) {
         <h2 className="font-kumbh text-[28px] font-bold text-white md:text-[32px]">
           TOP GAMES
         </h2>
-        <a
-          href="#"
+        <Link
+          href="/browse?sort=rating"
           className="shrink-0 font-kumbh text-sm tracking-[0.2em] text-[#8e0314] transition-colors hover:text-[#b00a1c] md:text-base"
         >
           VIEW MORE &gt;
-        </a>
+        </Link>
       </div>
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">

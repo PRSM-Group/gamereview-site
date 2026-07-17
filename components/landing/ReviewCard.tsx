@@ -1,6 +1,7 @@
 import Image from "next/image";
 import type { LandingReview } from "@/lib/landing-data";
 import { StarRating } from "@/components/ui/StarRating";
+import { resolveImageSrc } from "@/lib/image-src";
 
 type ReviewCardProps = {
   review: LandingReview;
@@ -17,7 +18,7 @@ export function ReviewCard({ review }: ReviewCardProps) {
       {review.coverImage ? (
         <div className="relative h-[188px] w-[132px] shrink-0 overflow-hidden rounded-[10px]">
           <Image
-            src={review.coverImage}
+            src={resolveImageSrc(review.coverImage)}
             alt=""
             fill
             className="object-cover"
