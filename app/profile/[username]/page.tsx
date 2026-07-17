@@ -3,15 +3,15 @@ import { SiteHeaderServer } from "@/components/layout/SiteHeaderServer";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileLikedGames } from "@/components/profile/ProfileLikedGames";
 import { ProfileGameReviewCard } from "@/components/profile/ProfileGameReviewCard";
-import { getUserById } from "@/lib/user.service";
+import { getUserByUsername } from "@/lib/user.service";
 
 export default async function ProfilePage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ username: string }>;
 }) {
-  const { id } = await params;
-  const user = await getUserById(id);
+  const { username } = await params;
+  const user = await getUserByUsername(username);
 
   if (!user) return <div>User not found.</div>;
 
@@ -38,7 +38,7 @@ export default async function ProfilePage({
               Recent Reviews
             </h2>
             <a
-              href={`/profile/${id}/reviews`}
+              href={`/profile/${username}/reviews`}
               className="text-xs font-bold tracking-widest text-red-700 hover:text-red-500 transition-colors uppercase"
             >
               View All &gt;
@@ -54,7 +54,7 @@ export default async function ProfilePage({
                   key={review.id}
                   review={review}
                   game={game}
-                  profileId={id}
+                  profileId={username}
                 />
               );
             })}

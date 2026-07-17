@@ -10,12 +10,12 @@ import Link from "next/link";
 export default async function ReviewsPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ username: string }>;
 }) {
-  const { id: profileId } = await params;
+  const { username } = await params;
 
   const dbUser = await prisma.user.findUnique({
-    where: { id: profileId },
+    where: { username },
     select: {
       id: true,
       username: true,
@@ -24,7 +24,7 @@ export default async function ReviewsPage({
   });
 
   if (dbUser) {
-    const dbReviews = await getReviewsByUserId(profileId);
+    const dbReviews = await getReviewsByUserId(dbUser.id);
     const reviews = dbReviews.map((review) => toPublicProfileReview(review));
 
     return (
@@ -32,7 +32,7 @@ export default async function ReviewsPage({
         <SiteHeaderServer />
         <div className="max-w-6xl text-base mx-auto px-4 pt-6 pb-2">
           <Link
-            href={`/profile/${profileId}`}
+            href={`/profile/${username}`}
             className="font-bold tracking-widest text-red-700 hover:text-red-500 uppercase transition-colors inline-flex items-center gap-1"
           >
             &lt; Return
@@ -65,7 +65,7 @@ export default async function ReviewsPage({
                           .title ?? "Unknown game",
                       coverImage: review.coverImage ?? "",
                     }}
-                    profileId={profileId}
+                    profileId={dbUser.id}
                   />
                 ))
               )}
@@ -76,12 +76,11 @@ export default async function ReviewsPage({
     );
   }
 
-  const user = seedUsers.find((u) => u.id === profileId);
+  const user = seedUsers.find((u) => u.username === username);
   if (!user) return null;
 
   const visibleReviews = seedReviews.filter((review) => {
-    const matchesAuthor =
-      review.authorName === user.username || review.authorName === profileId;
+    const matchesAuthor = review.authorName === user.username;
     const matchesReviewId = user.reviewIds.includes(review.id);
     return matchesAuthor || matchesReviewId;
   });
@@ -91,7 +90,7 @@ export default async function ReviewsPage({
       <SiteHeaderServer />
       <div className="max-w-6xl text-base mx-auto px-4 pt-6 pb-2">
         <Link
-          href={`/profile/${profileId}`}
+          href={`/profile/${username}`}
           className="font-bold tracking-widest text-red-700 hover:text-red-500 uppercase transition-colors inline-flex items-center gap-1"
         >
           &lt; Return
@@ -119,7 +118,7 @@ export default async function ReviewsPage({
                   key={review.id}
                   review={review}
                   game={game}
-                  profileId={profileId}
+                  profileId={user.id}
                 />
               );
             })}

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { getUserById, updateUser } from "@/lib/user.service";
+import { getUserByUsername, updateUser } from "@/lib/user.service";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const user = await getUserById(id);
+    const user = await getUserByUsername(id);
 
     if (!user)
       return NextResponse.json({ error: "User not found. " }, { status: 404 });
@@ -42,7 +42,7 @@ export async function PATCH(
       );
     }
 
-    const existing = await getUserById(id);
+    const existing = await getUserByUsername(id);
     if (!existing) {
       return NextResponse.json({ error: "User not found." }, { status: 400 });
     }

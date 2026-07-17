@@ -20,6 +20,12 @@ export async function getUserById(id: string) {
 export async function getUserByUsername(username: string) {
   return await prisma.user.findUnique({
     where: { username },
+    include: {
+      reviews: true,
+      likedGames: true,
+      followers: true,
+      following: true,
+    },
   });
 }
 
