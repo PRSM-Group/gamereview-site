@@ -1,11 +1,10 @@
 import { ProfileIdentity } from "@/components/profile/ProfileIdentity";
 
 type User = {
-  displayName: string;
-  username: string;
-  followers: number;
-  following: number;
-  bio: string;
+  displayName: string | null;
+  username: string | null;
+  profileImage: string | null;
+  bio: string | null;
 };
 
 export function ProfileHeader({ user }: { user: User }) {
@@ -17,7 +16,7 @@ export function ProfileHeader({ user }: { user: User }) {
         size="lg"
       />
 
-      <div className="flex gap-6 text-sm">
+      {/* <div className="flex gap-6 text-sm">
         <div>
           <span className="font-bold text-gray-200">{user.following}</span>
           <span className="text-neutral-400 ml-1.5">Following</span>
@@ -26,7 +25,7 @@ export function ProfileHeader({ user }: { user: User }) {
           <span className="font-bold text-gray-200">{user.followers}</span>
           <span className="text-neutral-400 ml-1.5">Followers</span>
         </div>
-      </div>
+      </div> */}
 
       <div className="space-y-2">
         <h2 className="inline-block text-sm font-black tracking-widest uppercase border-b-2 border-white pb-1">

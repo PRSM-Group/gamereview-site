@@ -1,8 +1,9 @@
-import { seedUsers, seedGames, seedReviews } from "@/lib/seed-data";
+import { seedGames, seedReviews } from "@/lib/seed-data";
 import { SiteHeaderServer } from "@/components/layout/SiteHeaderServer";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileLikedGames } from "@/components/profile/ProfileLikedGames";
 import { ProfileGameReviewCard } from "@/components/profile/ProfileGameReviewCard";
+import { getUserById } from "@/lib/user.service";
 // import { UserReviewCard } from "@/components/profile/UserReviewCard";
 
 export default async function ProfilePage({
@@ -11,12 +12,13 @@ export default async function ProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const user = seedUsers.find((u) => u.id === id);
+  const user = await getUserById(id);
+  const followers = user?.followers.length;
+  const following = user?.following.length;
+  const likedGames = user?.likedGames;
+  console.log(user);
 
   if (!user) return <div>User not found.</div>;
-
-  const likedGames = seedGames.filter((g) => user.likedGameIds.includes(g.id));
-  const userReviews = seedReviews.filter((r) => user.reviewIds.includes(r.id)); // ← get user's reviews
 
   return (
     <div className="min-h-full bg-[#070000] text-white">
@@ -24,7 +26,7 @@ export default async function ProfilePage({
       <div className="max-w-6xl text-base mx-auto px-4 pt-6 pb-2">
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-12 items-start">
           <ProfileHeader user={user} />
-          <ProfileLikedGames games={likedGames} />
+          <ProfileLikedGames games={user.likedGames} />
         </div>
 
         {/* recent reviews */}
@@ -42,7 +44,7 @@ export default async function ProfilePage({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
-            {userReviews.map((review) => {
+            {user.reviews.map((review) => {
               const game = seedGames.find((g) => g.id === review.gameId);
               if (!game) return null;
               return (

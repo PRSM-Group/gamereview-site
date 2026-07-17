@@ -1,14 +1,21 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Decimal } from "@prisma/client/runtime/client";
+import { Recommendation, ReviewStatus } from "@/generated/prisma/enums";
 
 type Review = {
   id: string;
-  title: string;
+  heading: string;
   content: string;
-  rating: number;
-  authorName: string;
-  coverImage: string | null;
+  rating: Decimal;
+  status: ReviewStatus;
+  recommendation: Recommendation;
+  containsSpoilers: boolean;
+  userId: string;
   gameId: string;
+  // coverImage: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 type Game = {
@@ -46,13 +53,13 @@ export function ProfileGameReviewCard({
       <div className="flex-1 min-w-0 space-y-1">
         <div className="flex justify-between items-center text-[10px]">
           <div className="flex text-white text-xs">
-            {"★".repeat(review.rating)}
-            {"☆".repeat(5 - review.rating)}
+            {"★".repeat(Number(review.rating))}
+            {"☆".repeat(5 - Number(review.rating))}
           </div>
         </div>
 
         <h4 className="font-black text-sm uppercase tracking-wide truncate">
-          {review.title}
+          {review.heading}
         </h4>
 
         <p className="mt-2 font-kumbh text-sm leading-normal text-white">

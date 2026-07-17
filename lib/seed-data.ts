@@ -137,7 +137,7 @@ export const seedUsers = [
     reviews: ["review_1"],
     followers: 67,
     following: 69,
-    likedGameIds: ["game_repo", "game_nightfall"],
-    reviewIds: ["review_1", "review_2", "review_3"],
+    likedGameIds: ["game_repo", "game_nightfall"] as string[],
+    reviewIds: ["review_1", "review_2", "review_3"] as string[],
   },
 ];
