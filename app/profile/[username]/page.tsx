@@ -3,7 +3,7 @@ import { SiteHeaderServer } from "@/components/layout/SiteHeaderServer";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileLikedGames } from "@/components/profile/ProfileLikedGames";
 import { ProfileGameReviewCard } from "@/components/profile/ProfileGameReviewCard";
-import { getUserByUsername } from "@/lib/user.service";
+import { getUserByUsername } from "@/actions/user.service";
 
 export default async function ProfilePage({
   params,

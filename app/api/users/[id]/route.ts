@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { getUserByUsername, updateUser } from "@/lib/user.service";
+import { getUserByUsername, updateUser } from "@/actions/user.service";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(

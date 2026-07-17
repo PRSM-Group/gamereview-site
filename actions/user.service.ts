@@ -1,4 +1,4 @@
-import { prisma } from "./prisma";
+import { prisma } from "../lib/prisma";
 
 //get user by id
 export async function getUserById(id: string) {
@@ -6,7 +6,6 @@ export async function getUserById(id: string) {
     where: { id },
     include: {
       reviews: true,
-      //   Review: true,
       likedGames: true,
       likedReviews: true,
       followers: true,
