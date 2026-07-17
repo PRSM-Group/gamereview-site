@@ -14,6 +14,7 @@ import {
   loginAction,
   signupAction,
 } from "@/app/login/actions";
+import { getAuthCallbackUrl } from "@/lib/auth/config";
 import { createClient } from "@/lib/supabase/client";
 
 type AuthMode = "login" | "signup";
@@ -188,7 +189,7 @@ export function AuthPanel() {
 
       try {
         const supabase = createClient();
-        const redirectTo = `${window.location.origin}/auth/callback`;
+        const redirectTo = getAuthCallbackUrl(window.location.origin);
 
         const { data, error } = await supabase.auth.signUp({
           email,
@@ -280,7 +281,7 @@ export function AuthPanel() {
           type: "signup",
           email,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
+            emailRedirectTo: getAuthCallbackUrl(window.location.origin),
           },
         });
 
