@@ -1,5 +1,6 @@
-import { getUserById } from "@/lib/user.service";
-import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { getUserById, updateUser } from "@/lib/user.service";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: Request,
@@ -16,6 +17,53 @@ export async function GET(
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to fetch user" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+
+    const allowedFields = ["displayName", "bio", "username", "profileImage"];
+    const invalidFields = Object.keys(body).filter(
+      (key) => !allowedFields.includes(key),
+    );
+
+    if (invalidFields.length > 0) {
+      return NextResponse.json(
+        { error: `Invalid fields: ${invalidFields.join(", ")}` },
+        { status: 400 },
+      );
+    }
+
+    const existing = await getUserById(id);
+    if (!existing) {
+      return NextResponse.json({ error: "User not found." }, { status: 400 });
+    }
+
+    if (body.username && body.username !== existing.username) {
+      const taken = await prisma.user.findUnique({
+        where: { username: body.username },
+      });
+      if (taken) {
+        return NextResponse.json(
+          { error: "Username already taken." },
+          { status: 409 },
+        );
+      }
+    }
+
+    const updated = await updateUser(id, body);
+    return NextResponse.json(updated);
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to update user. " },
       { status: 500 },
     );
   }
