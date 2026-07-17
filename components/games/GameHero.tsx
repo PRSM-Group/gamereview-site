@@ -1,10 +1,11 @@
 import Image from "next/image";
+import { resolveImageSrc } from "@/lib/image-src";
 
 export default function GameHero({ bannerImage }: { bannerImage: string }) {
   return (
-    <div className="relative w-full h-90 h-96 bg-black">
+    <div className="relative h-96 w-full bg-black">
       <Image
-        src={bannerImage}
+        src={resolveImageSrc(bannerImage)}
         alt="Game Banner"
         fill
         priority

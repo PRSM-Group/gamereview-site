@@ -6,18 +6,16 @@ import Image from "next/image";
 import { FeaturedCarousel } from "@/components/browse/FeaturedCarousel";
 import { GameResultCard } from "@/components/browse/GameResultCard";
 import { SiteHeader } from "@/components/layout/SiteHeader";
-import {
-  browseGames as fallbackBrowseGames,
-  featuredBanners as fallbackFeaturedBanners,
-  filterAndSortGames,
-  GENRES,
-  TAGS,
-  type BrowseGame,
-  type FeaturedBanner,
-  type Genre,
-  type SortOption,
-  type Tag,
-} from "@/lib/browse-mock";
+import type { SortOption } from "@/lib/browse-mock";
+
+import type { GameSummary } from "@/services/game.service";
+import { Genre, type Genre as GenreValue } from "@/generated/prisma/browser";
+const GENRES = Object.values(Genre);
+
+type BrowseProps = {
+  initialSession?: Session | null;
+  games: GameSummary[];
+};
 
 const SORT_LABELS: Record<SortOption, string> = {
   reviews: "Most reviews",
@@ -26,40 +24,69 @@ const SORT_LABELS: Record<SortOption, string> = {
 
 export function BrowsePageClient({
   initialSession = null,
-  games = fallbackBrowseGames,
-  featuredBanners = fallbackFeaturedBanners,
-}: {
-  initialSession?: Session | null;
-  games?: BrowseGame[];
-  featuredBanners?: FeaturedBanner[];
-}) {
+  games,
+}: BrowseProps) {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortOption>("reviews");
   const [sortOpen, setSortOpen] = useState(false);
-  const [selectedGenres, setSelectedGenres] = useState<Genre[]>([]);
-  const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
+  const [selectedGenres, setSelectedGenres] = useState<GenreValue[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
-  const results = useMemo(
-    () =>
-      filterAndSortGames(
-        games,
-        query,
-        selectedGenres,
-        selectedTags,
-        sort,
-      ),
-    [games, query, selectedGenres, selectedTags, sort],
+  const availableTags = useMemo(
+    () => [...new Set(games.flatMap((game) => game.tags))].sort(),
+    [games],
   );
 
-  function toggleGenre(genre: Genre) {
+  const featuredBanners = useMemo(
+    () =>
+      [...games]
+        .sort(
+          (first, second) =>
+            second.averageRating - first.averageRating ||
+            second.reviewCount - first.reviewCount,
+        )
+        .slice(0, 5)
+        .map((game) => ({
+          id: game.id,
+          title: game.title,
+          subtitle: game.description,
+          image: game.bannerImage,
+          gameId: game.id,
+        })),
+    [games],
+  );
+
+  const results = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    const filteredGames = games.filter((game) => {
+      const matchesQuery =
+        !normalizedQuery ||
+        game.title.toLowerCase().includes(normalizedQuery) ||
+        game.description.toLowerCase().includes(normalizedQuery);
+      const matchesGenre =
+        selectedGenres.length === 0 ||
+        selectedGenres.some((genre) => game.genres.includes(genre));
+      const matchesTag =
+        selectedTags.length === 0 ||
+        selectedTags.some((tag) => game.tags.includes(tag));
+
+      return matchesQuery && matchesGenre && matchesTag;
+    });
+    return [...filteredGames].sort((first, second) => {
+      if (sort === "reviews") {
+        return second.reviewCount - first.reviewCount;
+      }
+      return second.averageRating - first.averageRating;
+    });
+  }, [games, query, selectedGenres, selectedTags, sort]);
+
+  function toggleGenre(genre: GenreValue) {
     setSelectedGenres((prev) =>
-      prev.includes(genre)
-        ? prev.filter((g) => g !== genre)
-        : [...prev, genre],
+      prev.includes(genre) ? prev.filter((g) => g !== genre) : [...prev, genre],
     );
   }
 
-  function toggleTag(tag: Tag) {
+  function toggleTag(tag: string) {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
     );
@@ -174,7 +201,7 @@ export function BrowsePageClient({
                 TAGS
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
-                {TAGS.map((tag) => {
+                {availableTags.map((tag) => {
                   const selected = selectedTags.includes(tag);
                   return (
                     <button

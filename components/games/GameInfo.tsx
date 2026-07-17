@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { resolveImageSrc } from "@/lib/image-src";
 
 type Game = {
   title: string;
@@ -22,7 +23,7 @@ export default function GameInfo({ game }: { game: Game }) {
       {/* left side: poster img */}
       <div className="relative w-60 h-72 flex-shrink-0">
         <Image
-          src={game.coverImage}
+          src={resolveImageSrc(game.coverImage)}
           alt={game.title}
           fill
           className="object-cover rounded"

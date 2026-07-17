@@ -1,7 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createGame, deleteGame, updateGame } from "@/services/game.service";
+import {
+  createGame,
+  deleteGame,
+  getGameById,
+  updateGame,
+} from "@/services/game.service";
 import {
   createGameSchema,
   type CreateGameInput,
@@ -14,6 +19,38 @@ export interface ActionResult {
   success: boolean;
   message: string;
   fieldErrors?: Record<string, string>;
+}
+
+export async function getGameByIdAction(id: string) {
+  await requireAdmin();
+
+  const game = await getGameById(id);
+  if (!game) {
+    return {
+      success: false,
+      message: "Game not found.",
+      game: null,
+    };
+  }
+
+  return {
+    success: true,
+    message: "Game loaded.",
+    game: {
+      id: game.id,
+      title: game.title,
+      description: game.description,
+      developer: game.developer,
+      releaseDate: game.releaseDate.toISOString().slice(0, 10),
+      coverImage: game.coverImage,
+      bannerImage: game.bannerImage,
+      genres: game.genres,
+      platforms: game.platforms,
+      tagIds: game.tags.map((tag) => tag.id),
+      reviewCount: game.reviewCount,
+      averageRating: game.averageRating,
+    },
+  };
 }
 
 export async function createGameAction(

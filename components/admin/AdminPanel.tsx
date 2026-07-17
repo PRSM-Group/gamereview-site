@@ -3,21 +3,19 @@
 import { useMemo, useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { logoutAction } from "@/app/login/actions";
-import {
-  GamesTab,
-  type AdminGame,
-  type AdminTag,
-} from "@/components/admin/GamesTab";
+import { GamesTab } from "@/components/admin/GamesTab";
 import { ReviewsTab } from "@/components/admin/ReviewsTab";
 import { UsersTab } from "@/components/admin/UsersTab";
 import type { AdminReview } from "@/lib/review-display";
 import { SITE_NAME } from "@/lib/seed-data";
+import type { GameSummary } from "@/services/game.service";
+import type { TagSummary } from "@/services/tag.service";
 
 type Tab = "users" | "games" | "reviews";
 
 type AdminPanelProps = {
-  games: AdminGame[];
-  tags: AdminTag[];
+  games: GameSummary[];
+  tags: TagSummary[];
   reviews: AdminReview[];
 };
 

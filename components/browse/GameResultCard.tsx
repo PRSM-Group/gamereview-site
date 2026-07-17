@@ -2,20 +2,20 @@
 
 import Image from "next/image";
 import { StarRating } from "@/components/ui/StarRating";
-import type { BrowseGame } from "@/lib/browse-mock";
 import { resolveImageSrc } from "@/lib/image-src";
+import type { GameSummary } from "@/services/game.service";
 
-type GameResultCardProps = {
-  game: BrowseGame;
+type GameCardProps = {
+  game: GameSummary;
 };
 
-export function GameResultCard({ game }: GameResultCardProps) {
+export function GameResultCard({ game }: GameCardProps) {
   return (
-    <article className="flex overflow-hidden rounded-[12px] bg-[rgba(88,5,14,0.41)] transition-colors hover:bg-[rgba(88,5,14,0.55)]">
-      <div className="relative w-[140px] shrink-0 self-stretch sm:w-[257px]">
+    <article className="flex h-[180px] overflow-hidden rounded-[12px] bg-[rgba(88,5,14,0.41)] transition-colors hover:bg-[rgba(88,5,14,0.55)] sm:h-[150px]">
+      <div className="relative h-full w-[140px] shrink-0 overflow-hidden sm:w-[257px]">
         <Image
-          src={resolveImageSrc(game.coverImage)}
-          alt=""
+          src={resolveImageSrc(game.bannerImage || game.coverImage)}
+          alt={game.title}
           fill
           className="object-cover"
           sizes="257px"
@@ -28,7 +28,7 @@ export function GameResultCard({ game }: GameResultCardProps) {
             {game.title}
           </h3>
           <div className="shrink-0">
-            <StarRating rating={Math.round(game.rating)} size={16} />
+            <StarRating rating={Math.round(game.averageRating)} size={16} />
           </div>
         </div>
 
@@ -40,7 +40,8 @@ export function GameResultCard({ game }: GameResultCardProps) {
         </p>
 
         <p className="mt-2 text-[11px] uppercase tracking-[0.1em] text-white/35">
-          {game.genre} · {game.reviewCount} reviews · {game.rating.toFixed(1)}
+          {game.genres.join(" · ")} · {game.reviewCount} reviews ·{" "}
+          {game.averageRating.toFixed(1)}
         </p>
       </div>
     </article>

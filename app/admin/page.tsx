@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { AdminPanel } from "@/components/admin/AdminPanel";
 import { toAdminReview } from "@/lib/review-display";
-import { getAdminGames } from "@/services/game.service";
+import { getAllGames } from "@/services/game.service";
 import { getAllReviews } from "@/services/review.service";
 import { getAllTags } from "@/services/tag.service";
 
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default async function AdminPage() {
   const [games, tags, reviews] = await Promise.all([
-    getAdminGames(),
+    getAllGames(),
     getAllTags(),
     getAllReviews(),
   ]);

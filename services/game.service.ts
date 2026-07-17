@@ -46,6 +46,8 @@ function formatGameDetails(game: GameWithDetails) {
   };
 }
 
+export type GameDetails = ReturnType<typeof formatGameDetails>;
+
 export async function getAllGames() {
   const games = await prisma.game.findMany({
     orderBy: {
@@ -61,6 +63,12 @@ export async function getAllGames() {
       coverImage: true,
       bannerImage: true,
       genres: true,
+      description: true,
+      tags: {
+        select: {
+          name: true,
+        },
+      },
       reviews: {
         select: {
           rating: true,
@@ -68,74 +76,18 @@ export async function getAllGames() {
       },
     },
   });
-  return games.map(({ reviews, ...game }) => ({
+  return games.map(({ reviews, tags, ...game }) => ({
     // Keep the selected game fields and add review statistics.
     ...game,
+    tags: tags.map((tag) => tag.name),
     reviewCount: reviews.length,
     averageRating: calculateAverageRating(reviews),
   }));
 }
 
-export async function getBrowseGames() {
-  const games = await prisma.game.findMany({
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      coverImage: true,
-      bannerImage: true,
-      genres: true,
-      tags: { select: { name: true } },
-      reviews: { select: { rating: true } },
-    },
-  });
+export type GameSummary = Awaited<ReturnType<typeof getAllGames>>[number];
 
-  return games.map((game) => ({
-    id: game.id,
-    title: game.title,
-    description: game.description,
-    coverImage: game.coverImage,
-    bannerImage: game.bannerImage,
-    rating: calculateAverageRating(game.reviews),
-    reviewCount: game.reviews.length,
-    genre: game.genres[0] ?? "ACTION",
-    tags: game.tags.map((tag) => tag.name),
-  }));
-}
-
-export async function getAdminGames() {
-  const games = await prisma.game.findMany({
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      developer: true,
-      releaseDate: true,
-      coverImage: true,
-      bannerImage: true,
-      genres: true,
-      platforms: true,
-      tags: {
-        select: { id: true },
-      },
-      reviews: {
-        select: { rating: true },
-      },
-    },
-  });
-
-  return games.map(({ tags, reviews, releaseDate, ...game }) => ({
-    ...game,
-    releaseDate: releaseDate.toISOString().slice(0, 10),
-    tagIds: tags.map((tag) => tag.id),
-    reviewCount: reviews.length,
-    averageRating: calculateAverageRating(reviews),
-  }));
-}
-
-export async function getGameById(id: string) {
+export async function getGameById(id: string): Promise<GameDetails | null> {
   // for admin
   const game = await prisma.game.findUnique({
     where: { id },
@@ -144,7 +96,7 @@ export async function getGameById(id: string) {
   return game ? formatGameDetails(game) : null;
 }
 
-export async function getGameBySlug(slug: string) {
+export async function getGameBySlug(slug: string): Promise<GameDetails | null> {
   // for regular user
   const game = await prisma.game.findUnique({
     where: { slug },

@@ -31,6 +31,7 @@ export function FeaturedCarousel({ banners }: FeaturedCarouselProps) {
     <div className="relative h-[240px] w-full overflow-hidden rounded-[16px] md:h-[375px]">
       {banners.map((banner, i) => {
         const active = i === index;
+
         return (
           <div
             key={banner.id}
@@ -41,7 +42,7 @@ export function FeaturedCarousel({ banners }: FeaturedCarouselProps) {
           >
             <Image
               src={resolveImageSrc(banner.image)}
-              alt=""
+              alt={banner.title}
               fill
               priority={i === 0}
               className="object-cover"

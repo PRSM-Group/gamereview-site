@@ -9,3 +9,5 @@ export async function getAllTags() {
     },
   });
 }
+
+export type TagSummary = Awaited<ReturnType<typeof getAllTags>>[number];

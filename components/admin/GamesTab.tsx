@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   createGameAction,
   deleteGameAction,
+  getGameByIdAction,
   updateGameAction,
 } from "@/actions/game";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
@@ -15,12 +16,18 @@ import {
   type Genre as GenreValue,
   type Platform as PlatformValue,
 } from "@/generated/prisma/browser";
+import type { GameSummary } from "@/services/game.service";
+import type { TagSummary } from "@/services/tag.service";
 
 const GENRES = Object.values(Genre);
 const PLATFORMS = Object.values(Platform);
 
-export type AdminGame = {
-  id: string;
+type GamesTabProps = {
+  games: GameSummary[];
+  tags: TagSummary[];
+};
+
+type FormState = {
   title: string;
   description: string;
   developer: string;
@@ -30,21 +37,7 @@ export type AdminGame = {
   genres: GenreValue[];
   platforms: PlatformValue[];
   tagIds: string[];
-  reviewCount: number;
-  averageRating: number;
 };
-
-export type AdminTag = {
-  id: string;
-  name: string;
-};
-
-type GamesTabProps = {
-  games: AdminGame[];
-  tags: AdminTag[];
-};
-
-type FormState = Omit<AdminGame, "id" | "reviewCount" | "averageRating">;
 
 function emptyGameForm(): FormState {
   return {
@@ -76,19 +69,33 @@ export function GamesTab({ games, tags }: GamesTabProps) {
     setForm(emptyGameForm());
   }
 
-  function openEdit(game: AdminGame) {
-    setMode("edit");
-    setEditingId(game.id);
-    setForm({
-      title: game.title,
-      description: game.description,
-      developer: game.developer,
-      releaseDate: game.releaseDate,
-      coverImage: game.coverImage,
-      bannerImage: game.bannerImage,
-      genres: [...game.genres],
-      platforms: [...game.platforms],
-      tagIds: [...game.tagIds],
+  function openEdit(game: GameSummary) {
+    startTransition(async () => {
+      try {
+        const result = await getGameByIdAction(game.id);
+
+        if (!result.success || !result.game) {
+          setAlertMessage(result.message);
+          return;
+        }
+
+        const details = result.game;
+        setEditingId(details.id);
+        setForm({
+          title: details.title,
+          description: details.description,
+          developer: details.developer,
+          releaseDate: details.releaseDate,
+          coverImage: details.coverImage,
+          bannerImage: details.bannerImage,
+          genres: [...details.genres],
+          platforms: [...details.platforms],
+          tagIds: [...details.tagIds],
+        });
+        setMode("edit");
+      } catch {
+        setAlertMessage("Unable to load the game.");
+      }
     });
   }
 
@@ -473,18 +480,17 @@ export function GamesTab({ games, tags }: GamesTabProps) {
                   {game.genres.join(" · ")} · {game.reviewCount} reviews
                 </p>
                 <p className="mt-2 line-clamp-2 text-sm text-white/60">
-                  {game.description}
+                  Average rating: {game.averageRating.toFixed(1)}
                 </p>
-                <p className="mt-2 text-xs text-white/35">
-                  {game.platforms.join(" · ")}
-                </p>
+                <p className="mt-2 text-xs text-white/35">/games/{game.slug}</p>
                 <div className="mt-4 flex gap-2">
                   <button
                     type="button"
+                    disabled={isPending}
                     className="glass-button flex-1 rounded-lg px-3 py-2 text-xs font-medium"
                     onClick={() => openEdit(game)}
                   >
-                    Details
+                    {isPending ? "Loading…" : "Details"}
                   </button>
                   <button
                     type="button"
