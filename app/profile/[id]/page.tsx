@@ -4,7 +4,6 @@ import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileLikedGames } from "@/components/profile/ProfileLikedGames";
 import { ProfileGameReviewCard } from "@/components/profile/ProfileGameReviewCard";
 import { getUserById } from "@/lib/user.service";
-// import { UserReviewCard } from "@/components/profile/UserReviewCard";
 
 export default async function ProfilePage({
   params,
@@ -13,19 +12,22 @@ export default async function ProfilePage({
 }) {
   const { id } = await params;
   const user = await getUserById(id);
-  const followers = user?.followers.length;
-  const following = user?.following.length;
-  const likedGames = user?.likedGames;
-  console.log(user);
 
   if (!user) return <div>User not found.</div>;
+
+  const followersCount = user?.followers.length;
+  const followingCount = user?.following.length;
 
   return (
     <div className="min-h-full bg-[#070000] text-white">
       <SiteHeaderServer />
       <div className="max-w-6xl text-base mx-auto px-4 pt-6 pb-2">
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-12 items-start">
-          <ProfileHeader user={user} />
+          <ProfileHeader
+            user={user}
+            followersCount={followersCount}
+            followingCount={followingCount}
+          />
           <ProfileLikedGames games={user.likedGames} />
         </div>
 

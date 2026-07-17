@@ -21,11 +21,9 @@ type Game = {
 export function UserReviewCard({
   review,
   game,
-  profileId,
 }: {
   review: Review;
   game: Game;
-  profileId: string;
 }) {
   return (
     <div className="glass-card flex flex-col lg:flex-row gap-8 rounded-[15px] pt-6 pb-6 p-10 text-white items-start">
