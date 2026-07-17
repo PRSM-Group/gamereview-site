@@ -44,10 +44,11 @@ enum Recommendation {
 
 model User {
   id                 String              @id @default(cuid())
+  supabaseId         String?             @unique
   email              String              @unique
   username           String              @unique
   displayName        String
-  passwordHash       String
+  passwordHash       String?
   emailVerified      DateTime?
   verificationTokens VerificationTaken[]
   profileImage       String?

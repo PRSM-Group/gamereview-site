@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { Session } from "next-auth";
+import type { AppSession } from "@/lib/auth";
 import Image from "next/image";
 import { FeaturedCarousel } from "@/components/browse/FeaturedCarousel";
 import { GameResultCard } from "@/components/browse/GameResultCard";
@@ -13,7 +13,7 @@ import { Genre, type Genre as GenreValue } from "@/generated/prisma/browser";
 const GENRES = Object.values(Genre);
 
 type BrowseProps = {
-  initialSession?: Session | null;
+  initialSession?: AppSession | null;
   initialSort?: SortOption;
   games: GameSummary[];
 };

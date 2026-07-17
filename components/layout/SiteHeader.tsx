@@ -2,17 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import type { Session } from "next-auth";
-import { useSession } from "next-auth/react";
 import { logoutAction } from "@/app/login/actions";
+import { useAppSession } from "@/components/auth/SessionProvider";
 import { SITE_NAME } from "@/lib/seed-data";
+import type { AppSession } from "@/lib/auth";
 
 const CLOSE_MS = 180;
 
 export function SiteHeader({
   initialSession = null,
 }: {
-  initialSession?: Session | null;
+  initialSession?: AppSession | null;
 }) {
   const [open, setOpen] = useState(false);
   const [closing, setClosing] = useState(false);
@@ -22,14 +22,11 @@ export function SiteHeader({
   const openRef = useRef(false);
   const closingRef = useRef(false);
 
-  const { data: clientSession, status } = useSession();
-  const session =
-    signingOut || status === "unauthenticated"
-      ? null
-      : (clientSession ?? initialSession);
+  const clientSession = useAppSession();
+  const session = signingOut ? null : (clientSession ?? initialSession);
   const isLoggedIn = Boolean(session?.user);
   const role = session?.user?.role;
-  const isLoading = status === "loading" && !initialSession;
+  const isLoading = false;
 
   const menuVisible = open || closing;
 

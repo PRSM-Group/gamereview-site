@@ -1,29 +1,25 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { NextResponse, type NextRequest } from "next/server";
+import { updateSession } from "@/lib/supabase/middleware";
 
-export const proxy = auth((req) => {
-  const pathname = req.nextUrl.pathname;
-  const isAdminRoute = pathname.startsWith("/admin");
+export async function proxy(request: NextRequest) {
+  const { response, user } = await updateSession(request);
+  const pathname = request.nextUrl.pathname;
 
-  if (!isAdminRoute) {
-    return NextResponse.next();
+  if (!pathname.startsWith("/admin")) {
+    return response;
   }
 
-  const role = req.auth?.user?.role;
-
-  if (!req.auth) {
-    const loginUrl = new URL("/login", req.nextUrl.origin);
+  if (!user) {
+    const loginUrl = new URL("/login", request.nextUrl.origin);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  if (role !== "ADMIN") {
-    return NextResponse.redirect(new URL("/", req.nextUrl.origin));
-  }
-
-  return NextResponse.next();
-});
+  return response;
+}
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
 };

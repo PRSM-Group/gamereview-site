@@ -1,18 +1,22 @@
 "use client";
 
-import type { Session } from "next-auth";
-import { SessionProvider as NextAuthSessionProvider } from "next-auth/react";
+import { createContext, useContext } from "react";
+import type { AppSession } from "@/lib/auth";
+
+const SessionContext = createContext<AppSession | null>(null);
 
 export function SessionProvider({
   children,
   session,
 }: {
   children: React.ReactNode;
-  session: Session | null;
+  session: AppSession | null;
 }) {
   return (
-    <NextAuthSessionProvider session={session} refetchOnWindowFocus>
-      {children}
-    </NextAuthSessionProvider>
+    <SessionContext.Provider value={session}>{children}</SessionContext.Provider>
   );
+}
+
+export function useAppSession() {
+  return useContext(SessionContext);
 }

@@ -1,15 +1,16 @@
 "use client";
 
-import { FormEvent, useState, useTransition, type ReactNode } from "react";
+import { FormEvent, useRef, useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { SITE_NAME } from "@/lib/seed-data";
+import { mapResendAuthError } from "@/lib/auth/errors";
 import {
+  completeSignupAction,
   loginAction,
-  resendVerificationAction,
   signupAction,
 } from "@/app/login/actions";
+import { createClient } from "@/lib/supabase/client";
 
 type AuthMode = "login" | "signup";
 
@@ -57,15 +58,17 @@ function FieldTipBubble({ message }: { message: string }) {
 
 export function AuthPanel() {
   const router = useRouter();
-  const { update } = useSession();
   const searchParams = useSearchParams();
   const mode: AuthMode =
     searchParams.get("mode") === "signup" ? "signup" : "login";
   const callbackUrl = searchParams.get("callbackUrl") ?? "";
+  const verified = searchParams.get("verified") === "1";
+  const authError = searchParams.get("error");
   const [tip, setTip] = useState<FieldTip | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [resendPending, startResendTransition] = useTransition();
+  const loginFormRef = useRef<HTMLFormElement>(null);
 
   function switchMode(next: AuthMode) {
     setTip(null);
@@ -140,10 +143,85 @@ export function AuthPanel() {
 
     startTransition(async () => {
       setSuccess(null);
-      const result =
-        mode === "login"
-          ? await loginAction({}, formData)
-          : await signupAction({}, formData);
+
+      if (mode === "login") {
+        const result = await loginAction({}, formData);
+
+        if (result?.error && result.field) {
+          setTip({ field: result.field, message: result.error });
+          form.querySelector<HTMLElement>(`[name="${result.field}"]`)?.focus();
+          return;
+        }
+
+        if (result?.success) {
+          setTip(null);
+          setSuccess(result.success);
+          return;
+        }
+
+        if (result?.redirectTo) {
+          router.refresh();
+          if (result.redirectTo.startsWith("/admin")) {
+            window.location.assign(result.redirectTo);
+            return;
+          }
+          router.push(result.redirectTo);
+        }
+        return;
+      }
+
+      const prepared = await signupAction({}, formData);
+      if (prepared?.error && prepared.field) {
+        setTip({ field: prepared.field, message: prepared.error });
+        form.querySelector<HTMLElement>(`[name="${prepared.field}"]`)?.focus();
+        return;
+      }
+
+      const username = String(formData.get("username") ?? "").trim();
+      const displayName = String(formData.get("displayName") ?? "").trim();
+      const email = String(formData.get("email") ?? "").trim().toLowerCase();
+      const password = String(formData.get("password") ?? "");
+      const supabase = createClient();
+      const redirectTo = `${window.location.origin}/auth/callback`;
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { username, displayName },
+          emailRedirectTo: redirectTo,
+        },
+      });
+
+      if (error) {
+        setTip({ field: "email", message: error.message });
+        form.querySelector<HTMLElement>(`[name="email"]`)?.focus();
+        return;
+      }
+
+      if (!data.user) {
+        setTip({
+          field: "email",
+          message: "Could not create account. Try again later.",
+        });
+        return;
+      }
+
+      if (data.user.identities?.length === 0) {
+        setTip({
+          field: "email",
+          message: "An account with this email already exists.",
+        });
+        return;
+      }
+
+      const result = await completeSignupAction({
+        supabaseId: data.user.id,
+        email,
+        username,
+        displayName,
+        emailVerified: data.user.email_confirmed_at,
+      });
 
       if (result?.error && result.field) {
         setTip({ field: result.field, message: result.error });
@@ -154,39 +232,56 @@ export function AuthPanel() {
       if (result?.success) {
         setTip(null);
         setSuccess(result.success);
-        return;
-      }
-
-      if (result?.redirectTo) {
-        await update();
-        router.refresh();
-        if (result.redirectTo.startsWith("/admin")) {
-          window.location.assign(result.redirectTo);
-          return;
-        }
-        router.push(result.redirectTo);
       }
     });
   }
 
   function onResendVerification(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = event.currentTarget;
-    const formData = new FormData(form);
 
     startResendTransition(async () => {
       setSuccess(null);
-      const result = await resendVerificationAction({}, formData);
 
-      if (result?.error && result.field) {
-        setTip({ field: result.field, message: result.error });
+      const loginEmail = loginFormRef.current?.elements.namedItem("email");
+      const email =
+        loginEmail instanceof HTMLInputElement
+          ? loginEmail.value.trim().toLowerCase()
+          : "";
+
+      if (!email) {
+        setTip({ field: "email", message: "Enter your email in the field above." });
+        loginEmail instanceof HTMLInputElement && loginEmail.focus();
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        setTip({
+          field: "email",
+          message: "Please enter a valid email address above.",
+        });
         return;
       }
 
-      if (result?.success) {
-        setTip(null);
-        setSuccess(result.success);
+      const supabase = createClient();
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) {
+        setTip({
+          field: "email",
+          message: mapResendAuthError(error.message),
+        });
+        return;
       }
+
+      setTip(null);
+      setSuccess(
+        "Verification email sent. Check your inbox and spam folder.",
+      );
     });
   }
 
@@ -282,6 +377,26 @@ export function AuthPanel() {
                 : "Join VOXEL and start sharing what you play."}
             </p>
 
+            {verified ? (
+              <p
+                role="status"
+                className="mt-6 rounded-lg border border-[#8e0314]/35 bg-[rgba(88,5,14,0.2)] px-4 py-3 text-sm text-[#ffb4b4]"
+              >
+                Email verified. You can log in now.
+              </p>
+            ) : null}
+
+            {authError ? (
+              <p
+                role="alert"
+                className="mt-6 rounded-lg border border-[#8e0314]/35 bg-[rgba(88,5,14,0.2)] px-4 py-3 text-sm text-[#ffb4b4]"
+              >
+                {authError === "profile"
+                  ? "Email verified, but we could not finish setting up your profile. Contact support."
+                  : "Authentication link is invalid or expired. Try signing in or resend verification."}
+              </p>
+            ) : null}
+
             {success ? (
               <p
                 role="status"
@@ -291,7 +406,12 @@ export function AuthPanel() {
               </p>
             ) : null}
 
-            <form className="mt-8 space-y-4" onSubmit={onSubmit} noValidate>
+            <form
+              ref={loginFormRef}
+              className="mt-8 space-y-4"
+              onSubmit={onSubmit}
+              noValidate
+            >
               {isLogin && callbackUrl ? (
                 <input type="hidden" name="callbackUrl" value={callbackUrl} />
               ) : null}
@@ -384,16 +504,9 @@ export function AuthPanel() {
                 onSubmit={onResendVerification}
               >
                 <p className="text-xs text-white/40">
-                  Didn&apos;t get a verification email?
+                  Didn&apos;t get a verification email? Use the email above and
+                  resend.
                 </p>
-                <input
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  className="admin-input"
-                  placeholder="you@email.com"
-                  onChange={() => tip?.field === "email" && setTip(null)}
-                />
                 <button
                   type="submit"
                   disabled={resendPending}
