@@ -7,15 +7,7 @@ type User = {
   bio: string | null;
 };
 
-export function ProfileHeader({
-  user,
-  followersCount,
-  followingCount,
-}: {
-  user: User;
-  followersCount: number;
-  followingCount: number;
-}) {
+export function ProfileHeader({ user }: { user: User }) {
   return (
     <div className="space-y-6">
       <ProfileIdentity
@@ -23,17 +15,6 @@ export function ProfileHeader({
         username={user.username}
         size="lg"
       />
-
-      <div className="flex gap-6 text-sm">
-        <div>
-          <span className="font-bold text-gray-200">{followingCount}</span>
-          <span className="text-neutral-400 ml-1.5">Following</span>
-        </div>
-        <div>
-          <span className="font-bold text-gray-200">{followersCount}</span>
-          <span className="text-neutral-400 ml-1.5">Followers</span>
-        </div>
-      </div>
 
       <div className="space-y-2">
         <h2 className="inline-block text-sm font-black tracking-widest uppercase border-b-2 border-white pb-1">

@@ -15,19 +15,12 @@ export default async function ProfilePage({
 
   if (!user) return <div>User not found.</div>;
 
-  const followersCount = user?.followers.length;
-  const followingCount = user?.following.length;
-
   return (
     <div className="min-h-full bg-[#070000] text-white">
       <SiteHeaderServer />
       <div className="max-w-6xl text-base mx-auto px-4 pt-6 pb-2">
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-12 items-start">
-          <ProfileHeader
-            user={user}
-            followersCount={followersCount}
-            followingCount={followingCount}
-          />
+          <ProfileHeader user={user} />
           <ProfileLikedGames games={user.likedGames} />
         </div>
 

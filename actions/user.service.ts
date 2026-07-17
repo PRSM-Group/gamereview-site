@@ -8,8 +8,8 @@ export async function getUserById(id: string) {
       reviews: true,
       likedGames: true,
       likedReviews: true,
-      followers: true,
-      following: true,
+      // followers: true,
+      // following: true,
       flaggedReviews: true,
     },
   });
@@ -22,8 +22,6 @@ export async function getUserByUsername(username: string) {
     include: {
       reviews: true,
       likedGames: true,
-      followers: true,
-      following: true,
     },
   });
 }
