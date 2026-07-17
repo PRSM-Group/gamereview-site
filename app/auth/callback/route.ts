@@ -1,9 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { mapCallbackAuthError } from "@/lib/auth/errors";
 import { syncPrismaUser } from "@/lib/auth/sync-user";
 import {
   createRouteHandlerClient,
   parseOtpType,
 } from "@/lib/supabase/route-handler";
+
+function redirectToLogin(origin: string, error: string) {
+  return NextResponse.redirect(`${origin}/login?error=${error}`);
+}
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -21,15 +26,15 @@ export async function GET(request: NextRequest) {
       type,
     });
     if (error) {
-      return NextResponse.redirect(`${origin}/login?error=auth`);
+      return redirectToLogin(origin, mapCallbackAuthError(error.message));
     }
   } else if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
-      return NextResponse.redirect(`${origin}/login?error=auth`);
+      return redirectToLogin(origin, mapCallbackAuthError(error.message));
     }
   } else {
-    return NextResponse.redirect(`${origin}/login?error=auth`);
+    return redirectToLogin(origin, "auth");
   }
 
   const {
@@ -40,7 +45,7 @@ export async function GET(request: NextRequest) {
     try {
       await syncPrismaUser(user);
     } catch {
-      return NextResponse.redirect(`${origin}/login?error=profile`);
+      return redirectToLogin(origin, "profile");
     }
   }
 

@@ -4,7 +4,11 @@ import { FormEvent, useRef, useState, useTransition, type ReactNode } from "reac
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SITE_NAME } from "@/lib/seed-data";
-import { mapResendAuthError } from "@/lib/auth/errors";
+import {
+  getCallbackErrorMessage,
+  mapResendAuthError,
+  mapSignupAuthError,
+} from "@/lib/auth/errors";
 import {
   completeSignupAction,
   loginAction,
@@ -63,7 +67,7 @@ export function AuthPanel() {
     searchParams.get("mode") === "signup" ? "signup" : "login";
   const callbackUrl = searchParams.get("callbackUrl") ?? "";
   const verified = searchParams.get("verified") === "1";
-  const authError = searchParams.get("error");
+  const authErrorMessage = getCallbackErrorMessage(searchParams.get("error"));
   const [tip, setTip] = useState<FieldTip | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -181,57 +185,66 @@ export function AuthPanel() {
       const displayName = String(formData.get("displayName") ?? "").trim();
       const email = String(formData.get("email") ?? "").trim().toLowerCase();
       const password = String(formData.get("password") ?? "");
-      const supabase = createClient();
-      const redirectTo = `${window.location.origin}/auth/callback`;
 
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { username, displayName },
-          emailRedirectTo: redirectTo,
-        },
-      });
+      try {
+        const supabase = createClient();
+        const redirectTo = `${window.location.origin}/auth/callback`;
 
-      if (error) {
-        setTip({ field: "email", message: error.message });
-        form.querySelector<HTMLElement>(`[name="email"]`)?.focus();
-        return;
-      }
-
-      if (!data.user) {
-        setTip({
-          field: "email",
-          message: "Could not create account. Try again later.",
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { username, displayName },
+            emailRedirectTo: redirectTo,
+          },
         });
-        return;
-      }
 
-      if (data.user.identities?.length === 0) {
-        setTip({
-          field: "email",
-          message: "An account with this email already exists.",
+        if (error) {
+          const mapped = mapSignupAuthError(error.message);
+          setTip({ field: mapped.field, message: mapped.message });
+          form.querySelector<HTMLElement>(`[name="${mapped.field}"]`)?.focus();
+          return;
+        }
+
+        if (!data.user) {
+          setTip({
+            field: "email",
+            message: "Could not create account. Try again later.",
+          });
+          return;
+        }
+
+        if (data.user.identities?.length === 0) {
+          setTip({
+            field: "email",
+            message: "An account with this email already exists.",
+          });
+          return;
+        }
+
+        const result = await completeSignupAction({
+          supabaseId: data.user.id,
+          email,
+          username,
+          displayName,
+          emailVerified: data.user.email_confirmed_at ?? null,
         });
-        return;
-      }
 
-      const result = await completeSignupAction({
-        supabaseId: data.user.id,
-        email,
-        username,
-        displayName,
-        emailVerified: data.user.email_confirmed_at ?? null,
-      });
+        if (result?.error && result.field) {
+          setTip({ field: result.field, message: result.error });
+          form.querySelector<HTMLElement>(`[name="${result.field}"]`)?.focus();
+          return;
+        }
 
-      if (result?.error && result.field) {
-        setTip({ field: result.field, message: result.error });
-        form.querySelector<HTMLElement>(`[name="${result.field}"]`)?.focus();
-        return;
-      }
-
-      if (result?.success) {
-        setTip(null);
-        setSuccess(result.success);
+        if (result?.success) {
+          setTip(null);
+          setSuccess(result.success);
+        }
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Could not sign up.";
+        const mapped = mapSignupAuthError(message);
+        setTip({ field: mapped.field, message: mapped.message });
       }
     });
   }
@@ -261,27 +274,32 @@ export function AuthPanel() {
         return;
       }
 
-      const supabase = createClient();
-      const { error } = await supabase.auth.resend({
-        type: "signup",
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-
-      if (error) {
-        setTip({
-          field: "email",
-          message: mapResendAuthError(error.message),
+      try {
+        const supabase = createClient();
+        const { error } = await supabase.auth.resend({
+          type: "signup",
+          email,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+          },
         });
-        return;
-      }
 
-      setTip(null);
-      setSuccess(
-        "Verification email sent. Check your inbox and spam folder.",
-      );
+        if (error) {
+          const mapped = mapResendAuthError(error.message);
+          setTip({ field: mapped.field, message: mapped.message });
+          return;
+        }
+
+        setTip(null);
+        setSuccess(
+          "Verification email sent. Check your inbox and spam folder.",
+        );
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Could not send email.";
+        const mapped = mapResendAuthError(message);
+        setTip({ field: mapped.field, message: mapped.message });
+      }
     });
   }
 
@@ -386,14 +404,12 @@ export function AuthPanel() {
               </p>
             ) : null}
 
-            {authError ? (
+            {authErrorMessage ? (
               <p
                 role="alert"
                 className="mt-6 rounded-lg border border-[#8e0314]/35 bg-[rgba(88,5,14,0.2)] px-4 py-3 text-sm text-[#ffb4b4]"
               >
-                {authError === "profile"
-                  ? "Email verified, but we could not finish setting up your profile. Contact support."
-                  : "Authentication link is invalid or expired. Try signing in or resend verification."}
+                {authErrorMessage}
               </p>
             ) : null}
 

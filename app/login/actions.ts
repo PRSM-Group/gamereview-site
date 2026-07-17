@@ -1,18 +1,18 @@
 "use server";
 
+import {
+  mapLoginAuthError,
+  mapPrismaSignupError,
+  mapResendAuthError,
+} from "@/lib/auth/errors";
 import { getPostLoginRedirect } from "@/lib/auth/redirects";
-import { mapResendAuthError } from "@/lib/auth/errors";
 import { signOut } from "@/lib/auth";
+import type { AuthActionState } from "@/lib/auth/types";
 import { syncPrismaUser } from "@/lib/auth/sync-user";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 
-export type AuthActionState = {
-  error?: string;
-  field?: "username" | "displayName" | "email" | "password" | "confirmPassword";
-  redirectTo?: string;
-  success?: string;
-};
+export type { AuthActionState } from "@/lib/auth/types";
 
 const PASSWORD_RULE =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,}$/;
@@ -26,37 +26,8 @@ function appUrl() {
   return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 }
 
-function mapAuthError(message: string): AuthActionState {
-  const lower = message.toLowerCase();
-
-  if (lower.includes("email not confirmed")) {
-    return {
-      error:
-        "Verify your email before logging in. Check your inbox or resend below.",
-      field: "email",
-    };
-  }
-
-  if (lower.includes("invalid login credentials")) {
-    return {
-      error: "Invalid email or password.",
-      field: "email",
-    };
-  }
-
-  if (lower.includes("invalid path")) {
-    return {
-      error:
-        "Auth is misconfigured. Check NEXT_PUBLIC_SUPABASE_URL uses the project root (no /rest/v1).",
-      field: "email",
-    };
-  }
-
-  return { error: message, field: "email" };
-}
-
-function mapResendError(message: string): AuthActionState {
-  return { error: mapResendAuthError(message), field: "email" };
+function toState(result: { message: string; field: AuthActionState["field"] }) {
+  return { error: result.message, field: result.field };
 }
 
 export async function logoutAction() {
@@ -77,33 +48,35 @@ export async function loginAction(
     return { error: "Please fill out this field.", field: "password" };
   }
 
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-  if (error) {
-    return mapAuthError(error.message);
-  }
+    if (error) {
+      return toState(mapLoginAuthError(error.message));
+    }
 
-  if (!data.user?.email_confirmed_at) {
-    await supabase.auth.signOut();
+    if (!data.user?.email_confirmed_at) {
+      await supabase.auth.signOut();
+      return toState(mapLoginAuthError("Email not confirmed"));
+    }
+
+    const prismaUser = await syncPrismaUser(data.user);
+
     return {
-      error:
-        "Verify your email before logging in. Check your inbox or resend below.",
-      field: "email",
+      redirectTo: getPostLoginRedirect(
+        getString(formData, "callbackUrl"),
+        prismaUser.role,
+      ),
     };
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Could not log in. Try again.";
+    return toState(mapLoginAuthError(message));
   }
-
-  const prismaUser = await syncPrismaUser(data.user);
-
-  return {
-    redirectTo: getPostLoginRedirect(
-      getString(formData, "callbackUrl"),
-      prismaUser.role,
-    ),
-  };
 }
 
 export async function prepareSignupAction(
@@ -169,33 +142,44 @@ export async function completeSignupAction(input: {
 }): Promise<AuthActionState> {
   const email = input.email.trim().toLowerCase();
 
-  const existing = await prisma.user.findFirst({
-    where: {
-      OR: [{ email }, { supabaseId: input.supabaseId }, { username: input.username }],
-    },
-  });
+  try {
+    const existing = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email },
+          { supabaseId: input.supabaseId },
+          { username: input.username },
+        ],
+      },
+    });
 
-  if (existing) {
+    if (existing) {
+      return {
+        error: "An account with this email or username already exists.",
+        field: "email",
+      };
+    }
+
+    await prisma.user.create({
+      data: {
+        supabaseId: input.supabaseId,
+        email,
+        username: input.username,
+        displayName: input.displayName,
+        emailVerified: input.emailVerified
+          ? new Date(input.emailVerified)
+          : null,
+      },
+    });
+
     return {
-      error: "An account with this email or username already exists.",
-      field: "email",
+      success:
+        "Account created. Check your email for a verification link before logging in.",
     };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return toState(mapPrismaSignupError(message));
   }
-
-  await prisma.user.create({
-    data: {
-      supabaseId: input.supabaseId,
-      email,
-      username: input.username,
-      displayName: input.displayName,
-      emailVerified: input.emailVerified ? new Date(input.emailVerified) : null,
-    },
-  });
-
-  return {
-    success:
-      "Account created. Check your email for a verification link before logging in.",
-  };
 }
 
 export async function signupAction(
@@ -220,21 +204,26 @@ export async function resendVerificationAction(
     return { error: "Please enter a valid email address.", field: "email" };
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.auth.resend({
-    type: "signup",
-    email,
-    options: {
-      emailRedirectTo: `${redirectOrigin}/auth/callback`,
-    },
-  });
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: {
+        emailRedirectTo: `${redirectOrigin}/auth/callback`,
+      },
+    });
 
-  if (error) {
-    return mapResendError(error.message);
+    if (error) {
+      return toState(mapResendAuthError(error.message));
+    }
+
+    return {
+      success: "Verification email sent. Check your inbox and spam folder.",
+    };
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Could not send email.";
+    return toState(mapResendAuthError(message));
   }
-
-  return {
-    success:
-      "Verification email sent. Check your inbox and spam folder.",
-  };
 }
