@@ -51,7 +51,7 @@ export function BrowsePageClient({
           title: game.title,
           subtitle: game.description,
           image: game.bannerImage,
-          gameId: game.id,
+          gameId: game.slug,
         })),
     [games],
   );

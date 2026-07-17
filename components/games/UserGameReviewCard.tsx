@@ -1,17 +1,6 @@
-type Review = {
-  id: string;
-  title: string;
-  content: string;
-  rating: number;
-  displayName: string;
-  userName: string;
-  coverImage: string | null;
-  featured: boolean;
-  gameId: string;
-  status: string;
-};
+import type { PublicGameReview } from "@/lib/review-display";
 
-export function UserGameReviewCard({ review }: { review: Review }) {
+export function UserGameReviewCard({ review }: { review: PublicGameReview }) {
   return (
     <div className="glass-card flex flex-col lg:flex-row gap-8 rounded-[15px] pt-6 pb-6 p-10 text-white items-start">
       {/* left side: user info + status */}

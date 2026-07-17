@@ -1,6 +1,17 @@
 import { z } from "zod";
 import { Genre, Platform } from "@/generated/prisma/client";
 
+function isSupportedImageSource(value: string) {
+  if (value.startsWith("/images/")) return true;
+
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export const createGameSchema = z.object({
   title: z
     .string()
@@ -18,7 +29,13 @@ export const createGameSchema = z.object({
     .min(1, { message: "Developer is required" })
     .max(100, { message: "Developer must not exceed 100 characters" }),
   releaseDate: z.coerce.date(),
-  coverImage: z.string().trim().min(1, { message: "Cover image is required" }),
+  coverImage: z
+    .string()
+    .trim()
+    .min(1, { message: "Cover image is required" })
+    .refine(isSupportedImageSource, {
+      message: "Use an /images/... path or a valid http(s) URL",
+    }),
   bannerImage: z
     .string()
     .trim()

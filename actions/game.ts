@@ -95,11 +95,11 @@ export async function updateGameAction(
     };
   }
 
-  await updateGame(id, validated.data);
+  const game = await updateGame(id, validated.data);
 
   revalidatePath("/admin");
   revalidatePath("/");
-  revalidatePath(`/games/${id}`);
+  revalidatePath(`/games/${game.slug}`);
 
   return {
     success: true,
@@ -110,10 +110,11 @@ export async function updateGameAction(
 export async function deleteGameAction(id: string): Promise<ActionResult> {
   await requireAdmin();
 
-  await deleteGame(id);
+  const game = await deleteGame(id);
 
   revalidatePath("/admin");
   revalidatePath("/");
+  revalidatePath(`/games/${game.slug}`);
   return {
     success: true,
     message: "Game deleted successfully.",

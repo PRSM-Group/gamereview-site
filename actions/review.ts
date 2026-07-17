@@ -62,7 +62,7 @@ export async function updateReviewAction(
 
   revalidatePath("/admin");
   revalidatePath("/");
-  revalidatePath(`/games/${review.game.id}`);
+  revalidatePath(`/games/${review.game.slug}`);
 
   return {
     success: true,

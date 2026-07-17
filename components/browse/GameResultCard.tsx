@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { StarRating } from "@/components/ui/StarRating";
 import { resolveImageSrc } from "@/lib/image-src";
 import type { GameSummary } from "@/services/game.service";
@@ -34,9 +35,12 @@ export function GameResultCard({ game }: GameCardProps) {
 
         <p className="mt-1 line-clamp-2 font-kumbh text-xs text-white/80 sm:text-sm">
           {game.description}{" "}
-          <a href="#" className="text-[#8e0314] hover:underline">
+          <Link
+            href={`/games/${game.slug}`}
+            className="text-[#8e0314] hover:underline"
+          >
             See More
-          </a>
+          </Link>
         </p>
 
         <p className="mt-2 text-[11px] uppercase tracking-[0.1em] text-white/35">

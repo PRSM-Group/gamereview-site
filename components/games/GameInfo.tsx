@@ -1,23 +1,30 @@
-"use client";
-
 import Image from "next/image";
 import { resolveImageSrc } from "@/lib/image-src";
+import type { GameDetails } from "@/services/game.service";
 
-type Game = {
-  title: string;
-  description?: string;
-  developer?: string;
-  releaseDate?: string;
-  platform?: string;
-  coverImage: string;
-  bannerImage?: string;
-  averageRating: number;
-  reviewCount: number;
-  genres?: readonly string[];
-  tags?: readonly string[];
-};
+type GameInfoData = Pick<
+  GameDetails,
+  | "title"
+  | "description"
+  | "developer"
+  | "releaseDate"
+  | "coverImage"
+  | "averageRating"
+  | "reviewCount"
+  | "genres"
+  | "platforms"
+  | "tags"
+>;
 
-export default function GameInfo({ game }: { game: Game }) {
+function formatReleaseDate(releaseDate: Date) {
+  return releaseDate.toLocaleDateString("en-US", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+export default function GameInfo({ game }: { game: GameInfoData }) {
   return (
     <div className="flex gap-6 p-8 pb-4 -mt-5">
       {/* left side: poster img */}
@@ -26,6 +33,7 @@ export default function GameInfo({ game }: { game: Game }) {
           src={resolveImageSrc(game.coverImage)}
           alt={game.title}
           fill
+          unoptimized
           className="object-cover rounded"
         />
       </div>
@@ -44,13 +52,13 @@ export default function GameInfo({ game }: { game: Game }) {
               xmlns="http://www.w3.org/2000/svg"
               fill="currentColor"
               viewBox="0 0 24 24"
-              stroke-width="1.5"
+              strokeWidth="1.5"
               stroke="currentColor"
               className="w-8 h-8"
             >
               <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"
               />
             </svg>
@@ -60,12 +68,12 @@ export default function GameInfo({ game }: { game: Game }) {
           {game.description}
         </p>
 
+        <div className="relative z-10 mb-2">
+          <h2 className="inline-block text-lg font-bold tracking-wider uppercase border-b-2 border-white pb-1">
+            Details
+          </h2>
+        </div>
         <table className="text-sm text-gray-300">
-          <div className="relative z-10 mb-2">
-            <h2 className="inline-block text-lg font-bold tracking-wider uppercase border-b-2 border-white pb-1">
-              Details
-            </h2>
-          </div>
           <tbody>
             <tr>
               <td className="pr-6 text-gray-500 py-1">DEVELOPER</td>
@@ -73,11 +81,11 @@ export default function GameInfo({ game }: { game: Game }) {
             </tr>
             <tr>
               <td className="pr-6 text-gray-500 py-1">RELEASE DATE</td>
-              <td>{game.releaseDate}</td>
+              <td>{formatReleaseDate(game.releaseDate)}</td>
             </tr>
             <tr>
               <td className="pr-6 text-gray-500 py-1">PLATFORM</td>
-              <td>{game.platform}</td>
+              <td>{game.platforms.join(" · ")}</td>
             </tr>
           </tbody>
         </table>
@@ -118,7 +126,7 @@ export default function GameInfo({ game }: { game: Game }) {
         <div>
           <p className="text-xs text-gray-400 mb-2">GENRES</p>
           <div className="flex flex-wrap gap-2">
-            {game.genres?.map((genre) => (
+            {game.genres.map((genre) => (
               <span
                 key={genre}
                 className="rounded-[5px] px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wide transition-colors bg-[rgba(88,5,14,0.1)] text-white/55 hover:text-white/80"
@@ -133,12 +141,12 @@ export default function GameInfo({ game }: { game: Game }) {
         <div>
           <p className="text-xs text-gray-400 mb-2">TAGS</p>
           <div className="flex flex-wrap gap-2">
-            {game.tags?.map((tag) => (
+            {game.tags.map((tag) => (
               <span
-                key={tag}
+                key={tag.id}
                 className="rounded-[5px] px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wide transition-colors bg-[rgba(88,5,14,0.1)] text-white/55 hover:text-white/80"
               >
-                {tag}
+                {tag.name}
               </span>
             ))}
           </div>

@@ -59,20 +59,7 @@ export function toAdminReview(review: FormattedReview): AdminReview {
   };
 }
 
-export type PublicGameReview = {
-  id: string;
-  title: string;
-  content: string;
-  rating: number;
-  displayName: string;
-  userName: string;
-  coverImage: string | null;
-  featured: boolean;
-  gameId: string;
-  status: string;
-};
-
-export function toPublicGameReview(review: FormattedReview): PublicGameReview {
+export function toPublicGameReview(review: FormattedReview) {
   const rating =
     typeof review.rating === "number"
       ? review.rating
@@ -91,6 +78,8 @@ export function toPublicGameReview(review: FormattedReview): PublicGameReview {
     status: review.status,
   };
 }
+
+export type PublicGameReview = ReturnType<typeof toPublicGameReview>;
 
 export type PublicProfileReview = {
   id: string;
