@@ -1,6 +1,11 @@
 import { prisma } from "@/lib/prisma";
-import { getUserByUsername, updateUser } from "@/actions/user.service";
+import {
+  getUserByUsername,
+  updateUser,
+  deleteUser,
+} from "@/actions/user.service";
 import { NextRequest, NextResponse } from "next/server";
+import next from "next";
 
 export async function GET(
   request: Request,
@@ -59,11 +64,37 @@ export async function PATCH(
       }
     }
 
-    const updated = await updateUser(id, body);
+    const updated = await updateUser(existing.id, body);
     return NextResponse.json(updated);
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to update user. " },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { id } = await params;
+
+    const existing = await getUserByUsername(id);
+    if (!existing) {
+      return NextResponse.json({ error: "User not found." }, { status: 404 });
+    }
+
+    await deleteUser(existing.id);
+
+    return NextResponse.json(
+      { message: "User deleted successfully." },
+      { status: 200 },
+    );
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to delete user." },
       { status: 500 },
     );
   }
