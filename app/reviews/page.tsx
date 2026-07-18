@@ -7,6 +7,8 @@ import {
 import { auth } from "@/lib/auth";
 import { getAllReviews } from "@/services/review.service";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Reviews · VOXEL",
   description: "Browse the latest and highest-rated game reviews on VOXEL.",

@@ -5,6 +5,8 @@ import { ProfileLikedGames } from "@/components/profile/ProfileLikedGames";
 import { ProfileGameReviewCard } from "@/components/profile/ProfileGameReviewCard";
 import { getUserByUsername } from "@/services/user.service";
 
+export const dynamic = "force-dynamic";
+
 export default async function ProfilePage({
   params,
 }: {
