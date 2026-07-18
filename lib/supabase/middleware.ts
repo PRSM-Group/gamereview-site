@@ -1,30 +1,41 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase/env";
+import { getSupabaseConfig } from "@/lib/supabase/env";
 
 export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  const response = NextResponse.next({ request });
+  const config = getSupabaseConfig();
 
-  const supabase = createServerClient(getSupabaseUrl(), getSupabaseAnonKey(), {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
+  if (!config) {
+    return { response, user: null };
+  }
+
+  try {
+    let sessionResponse = response;
+
+    const supabase = createServerClient(config.url, config.anonKey, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value),
+          );
+          sessionResponse = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            sessionResponse.cookies.set(name, value, options),
+          );
+        },
       },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) =>
-          request.cookies.set(name, value),
-        );
-        response = NextResponse.next({ request });
-        cookiesToSet.forEach(({ name, value, options }) =>
-          response.cookies.set(name, value, options),
-        );
-      },
-    },
-  });
+    });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  return { response, user };
+    return { response: sessionResponse, user };
+  } catch {
+    return { response, user: null };
+  }
 }

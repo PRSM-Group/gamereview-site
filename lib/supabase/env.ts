@@ -18,3 +18,19 @@ export function getSupabaseAnonKey(): string {
 
   return key;
 }
+
+export function getSupabaseConfig():
+  | { url: string; anonKey: string }
+  | null {
+  const raw = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+
+  if (!raw || !anonKey) {
+    return null;
+  }
+
+  return {
+    url: raw.replace(/\/rest\/v1\/?$/, "").replace(/\/$/, ""),
+    anonKey,
+  };
+}

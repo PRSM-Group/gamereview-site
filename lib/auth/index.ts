@@ -13,37 +13,41 @@ export type AppSession = {
 };
 
 export async function auth(): Promise<AppSession | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (!user?.email) {
-    return null;
-  }
-
-  let prismaUser = await prisma.user.findFirst({
-    where: {
-      OR: [{ supabaseId: user.id }, { email: user.email }],
-    },
-  });
-
-  if (!prismaUser) {
-    try {
-      prismaUser = await syncPrismaUser(user);
-    } catch {
+    if (!user?.email) {
       return null;
     }
-  }
 
-  return {
-    user: {
-      id: prismaUser.id,
-      email: prismaUser.email,
-      name: prismaUser.displayName,
-      role: prismaUser.role,
-    },
-  };
+    let prismaUser = await prisma.user.findFirst({
+      where: {
+        OR: [{ supabaseId: user.id }, { email: user.email }],
+      },
+    });
+
+    if (!prismaUser) {
+      try {
+        prismaUser = await syncPrismaUser(user);
+      } catch {
+        return null;
+      }
+    }
+
+    return {
+      user: {
+        id: prismaUser.id,
+        email: prismaUser.email,
+        name: prismaUser.displayName,
+        role: prismaUser.role,
+      },
+    };
+  } catch {
+    return null;
+  }
 }
 
 export async function signOut() {
