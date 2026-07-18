@@ -8,6 +8,7 @@ export type LikeActionResult = {
   success: boolean;
   message: string;
   liked?: boolean;
+  likeCount?: number;
 };
 
 export async function toggleGameLikeAction(
@@ -29,7 +30,8 @@ export async function toggleGameLikeAction(
     return {
       success: true,
       message: liked ? "Game liked." : "Game unliked.",
-      liked,
+      liked: game.liked,
+      likeCount: game.likeCount,
     };
   } catch (error) {
     return {
@@ -56,13 +58,14 @@ export async function toggleReviewLikeAction(
 
   try {
     const review = await setReviewLiked(session.user.id, reviewId, liked);
-    revalidatePath(`/games/${review.game.slug}`);
+    revalidatePath(`/games/${review.gameSlug}`);
     revalidatePath("/reviews");
     revalidatePath("/");
     return {
       success: true,
       message: liked ? "Review liked." : "Review unliked.",
-      liked,
+      liked: review.liked,
+      likeCount: review.likeCount,
     };
   } catch (error) {
     return {

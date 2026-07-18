@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toggleGameLikeAction } from "@/actions/like";
@@ -20,28 +20,47 @@ export function LikeGameButton({
   const [isPending, startTransition] = useTransition();
   const [liked, setLiked] = useState(likedByMe);
   const [error, setError] = useState<string | null>(null);
+  const skipNextSync = useRef(false);
 
   useEffect(() => {
     setLiked(likedByMe);
-  }, [likedByMe]);
+    skipNextSync.current = false;
+  }, [gameId]);
+
+  useEffect(() => {
+    if (isPending) return;
+    if (skipNextSync.current) {
+      if (likedByMe === liked) {
+        skipNextSync.current = false;
+      }
+      return;
+    }
+    setLiked(likedByMe);
+  }, [likedByMe, isPending, liked]);
 
   function toggle() {
     if (!isLoggedIn) {
       setError("Log in to like games.");
       return;
     }
+    if (isPending) return;
 
     const nextLiked = !liked;
+    const previousLiked = liked;
     setLiked(nextLiked);
     setError(null);
+    skipNextSync.current = true;
 
     startTransition(async () => {
       const result = await toggleGameLikeAction(gameId, nextLiked);
       if (!result.success) {
-        setLiked(!nextLiked);
+        setLiked(previousLiked);
         setError(result.message);
+        skipNextSync.current = false;
         return;
       }
+
+      setLiked(result.liked ?? nextLiked);
       router.refresh();
     });
   }

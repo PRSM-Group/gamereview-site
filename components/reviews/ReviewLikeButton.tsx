@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -33,11 +33,25 @@ export function ReviewLikeButton({
   const [liked, setLiked] = useState(likedByMe);
   const [count, setCount] = useState(likeCount);
   const [error, setError] = useState<string | null>(null);
+  const skipNextSync = useRef(false);
 
   useEffect(() => {
     setLiked(likedByMe);
     setCount(likeCount);
-  }, [likedByMe, likeCount]);
+    skipNextSync.current = false;
+  }, [reviewId]);
+
+  useEffect(() => {
+    if (isPending) return;
+    if (skipNextSync.current) {
+      if (likedByMe === liked && likeCount === count) {
+        skipNextSync.current = false;
+      }
+      return;
+    }
+    setLiked(likedByMe);
+    setCount(likeCount);
+  }, [likedByMe, likeCount, isPending, liked, count]);
 
   function toggle(event: React.MouseEvent) {
     event.preventDefault();
@@ -47,19 +61,29 @@ export function ReviewLikeButton({
       setError("Log in to like reviews.");
       return;
     }
+    if (isPending) return;
 
     const nextLiked = !liked;
+    const previousLiked = liked;
+    const previousCount = count;
     setLiked(nextLiked);
     setCount((prev) => Math.max(0, prev + (nextLiked ? 1 : -1)));
     setError(null);
+    skipNextSync.current = true;
 
     startTransition(async () => {
       const result = await toggleReviewLikeAction(reviewId, nextLiked);
       if (!result.success) {
-        setLiked(!nextLiked);
-        setCount((prev) => Math.max(0, prev + (nextLiked ? -1 : 1)));
+        setLiked(previousLiked);
+        setCount(previousCount);
         setError(result.message);
+        skipNextSync.current = false;
         return;
+      }
+
+      setLiked(result.liked ?? nextLiked);
+      if (typeof result.likeCount === "number") {
+        setCount(result.likeCount);
       }
       router.refresh();
     });
