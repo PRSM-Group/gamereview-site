@@ -56,6 +56,21 @@ function parseReleaseDate(value?: string): Date {
   return Number.isNaN(parsed.getTime()) ? new Date("2025-01-01") : parsed;
 }
 
+const PLATFORM_MAP: Record<string, Platform> = {
+  pc: Platform.PC,
+  playstation: Platform.PLAYSTATION,
+  xbox: Platform.XBOX,
+  nintendo: Platform.NINTENDO,
+  mobile: Platform.MOBILE,
+};
+
+function mapPlatforms(platforms?: readonly string[]): Platform[] {
+  if (!platforms?.length) return [Platform.PC];
+  const mapped = platforms
+    .map((platform) => PLATFORM_MAP[platform.toLowerCase()] ?? null)
+    .filter((platform): platform is Platform => platform !== null);
+  return mapped.length > 0 ? [...new Set(mapped)] : [Platform.PC];
+}
 function mapGenres(genres?: readonly string[]): Genre[] {
   if (!genres?.length) return [Genre.ACTION];
   const mapped = genres
@@ -67,7 +82,6 @@ function mapGenres(genres?: readonly string[]): Genre[] {
 async function main() {
   await prisma.verificationTaken.deleteMany();
   await prisma.review.deleteMany();
-  await prisma.follow.deleteMany();
   await prisma.game.deleteMany();
   await prisma.tag.deleteMany();
   await prisma.user.deleteMany();
@@ -127,9 +141,7 @@ async function main() {
 
   const tagNames = new Set<string>();
   for (const game of seedGames) {
-    if ("tags" in game && game.tags) {
-      for (const tag of game.tags) tagNames.add(tag);
-    }
+    for (const tag of game.tags) tagNames.add(tag);
   }
 
   const tagIdByName = new Map<string, string>();
@@ -139,34 +151,23 @@ async function main() {
   }
 
   for (const game of seedGames) {
-    const tagConnect =
-      "tags" in game && game.tags
-        ? game.tags
-            .map((name) => tagIdByName.get(name))
-            .filter((id): id is string => Boolean(id))
-            .map((id) => ({ id }))
-        : [];
+    const tagConnect = game.tags
+      .map((name) => tagIdByName.get(name))
+      .filter((id): id is string => Boolean(id))
+      .map((id) => ({ id }));
 
     await prisma.game.create({
       data: {
         id: game.id,
         title: game.title,
         slug: toSlug(game.title),
-        description:
-          "description" in game
-            ? game.description
-            : `${game.title} — seeded placeholder description.`,
-        developer: "developer" in game ? game.developer : "Unknown",
-        releaseDate: parseReleaseDate(
-          "releaseDate" in game ? game.releaseDate : undefined,
-        ),
+        description: game.description,
+        developer: game.developer,
+        releaseDate: parseReleaseDate(game.releaseDate),
         coverImage: game.coverImage,
-        bannerImage:
-          "bannerImage" in game && game.bannerImage
-            ? game.bannerImage
-            : game.coverImage,
-        genres: mapGenres("genres" in game ? game.genres : undefined),
-        platforms: [Platform.PC],
+        bannerImage: game.bannerImage,
+        genres: mapGenres(game.genres),
+        platforms: mapPlatforms(game.platforms),
         ...(tagConnect.length > 0
           ? { tags: { connect: tagConnect } }
           : {}),
