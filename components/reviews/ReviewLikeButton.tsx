@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useCallback } from "react";
 import { toggleReviewLikeAction } from "@/actions/like";
+import { useLikeToggle } from "@/lib/use-like-toggle";
 
 type ReviewLikeButtonProps = {
   reviewId: string;
@@ -28,32 +28,19 @@ export function ReviewLikeButton({
   isLoggedIn,
   className = "",
 }: ReviewLikeButtonProps) {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  const [liked, setLiked] = useState(likedByMe);
-  const [count, setCount] = useState(likeCount);
-  const [error, setError] = useState<string | null>(null);
-  const skipNextSync = useRef(false);
+  const onToggle = useCallback(
+    (liked: boolean) => toggleReviewLikeAction(reviewId, liked),
+    [reviewId],
+  );
 
-  useEffect(() => {
-    setLiked(likedByMe);
-    setCount(likeCount);
-    skipNextSync.current = false;
-  }, [reviewId]);
+  const { liked, count, error, toggle, setError } = useLikeToggle({
+    itemId: reviewId,
+    initialLiked: likedByMe,
+    initialCount: likeCount,
+    onToggle,
+  });
 
-  useEffect(() => {
-    if (isPending) return;
-    if (skipNextSync.current) {
-      if (likedByMe === liked && likeCount === count) {
-        skipNextSync.current = false;
-      }
-      return;
-    }
-    setLiked(likedByMe);
-    setCount(likeCount);
-  }, [likedByMe, likeCount, isPending, liked, count]);
-
-  function toggle(event: React.MouseEvent) {
+  function handleClick(event: React.MouseEvent) {
     event.preventDefault();
     event.stopPropagation();
 
@@ -61,43 +48,18 @@ export function ReviewLikeButton({
       setError("Log in to like reviews.");
       return;
     }
-    if (isPending) return;
 
-    const nextLiked = !liked;
-    const previousLiked = liked;
-    const previousCount = count;
-    setLiked(nextLiked);
-    setCount((prev) => Math.max(0, prev + (nextLiked ? 1 : -1)));
-    setError(null);
-    skipNextSync.current = true;
-
-    startTransition(async () => {
-      const result = await toggleReviewLikeAction(reviewId, nextLiked);
-      if (!result.success) {
-        setLiked(previousLiked);
-        setCount(previousCount);
-        setError(result.message);
-        skipNextSync.current = false;
-        return;
-      }
-
-      setLiked(result.liked ?? nextLiked);
-      if (typeof result.likeCount === "number") {
-        setCount(result.likeCount);
-      }
-      router.refresh();
-    });
+    toggle();
   }
 
   return (
     <div className={`flex flex-col items-end gap-1 ${className}`}>
       <button
         type="button"
-        disabled={isPending}
-        onClick={toggle}
+        onClick={handleClick}
         aria-pressed={liked}
         aria-label={liked ? "Unlike review" : "Like review"}
-        className={`flex items-center gap-2 font-kumbh text-sm transition-opacity disabled:opacity-60 ${
+        className={`flex items-center gap-2 font-kumbh text-sm transition-opacity ${
           liked ? "text-[#ff8f8f]" : "text-[#997777] hover:text-[#ff8f8f]"
         }`}
       >

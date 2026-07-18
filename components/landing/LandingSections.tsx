@@ -6,12 +6,16 @@ import { TopGameCard } from "@/components/landing/TopGameCard";
 type LandingSectionsProps = {
   recentReviews: LandingReview[];
   topGames: LandingGame[];
+  isLoggedIn: boolean;
+  likedGameIds: string[];
 };
 
 export function RecentReviewsSection({
   reviews,
+  isLoggedIn,
 }: {
   reviews: LandingReview[];
+  isLoggedIn: boolean;
 }) {
   return (
     <section
@@ -32,14 +36,28 @@ export function RecentReviewsSection({
 
       <div className="grid gap-5 md:grid-cols-2 md:gap-6">
         {reviews.map((review) => (
-          <ReviewCard key={review.id} review={review} />
+          <ReviewCard
+            key={review.id}
+            review={review}
+            isLoggedIn={isLoggedIn}
+          />
         ))}
       </div>
     </section>
   );
 }
 
-export function TopGamesSection({ games }: { games: LandingGame[] }) {
+export function TopGamesSection({
+  games,
+  isLoggedIn,
+  likedGameIds,
+}: {
+  games: LandingGame[];
+  isLoggedIn: boolean;
+  likedGameIds: string[];
+}) {
+  const likedSet = new Set(likedGameIds);
+
   return (
     <section className="mx-auto max-w-[1280px] px-6 pb-24 md:px-[105px] md:pb-32">
       <div className="mb-8 flex items-end justify-between gap-4 md:mb-10">
@@ -56,7 +74,12 @@ export function TopGamesSection({ games }: { games: LandingGame[] }) {
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
         {games.map((game) => (
-          <TopGameCard key={game.id} game={game} />
+          <TopGameCard
+            key={game.id}
+            game={game}
+            likedByMe={likedSet.has(game.id)}
+            isLoggedIn={isLoggedIn}
+          />
         ))}
       </div>
     </section>
@@ -66,11 +89,20 @@ export function TopGamesSection({ games }: { games: LandingGame[] }) {
 export function LandingSections({
   recentReviews,
   topGames,
+  isLoggedIn,
+  likedGameIds,
 }: LandingSectionsProps) {
   return (
     <>
-      <RecentReviewsSection reviews={recentReviews} />
-      <TopGamesSection games={topGames} />
+      <RecentReviewsSection
+        reviews={recentReviews}
+        isLoggedIn={isLoggedIn}
+      />
+      <TopGamesSection
+        games={topGames}
+        isLoggedIn={isLoggedIn}
+        likedGameIds={likedGameIds}
+      />
     </>
   );
 }

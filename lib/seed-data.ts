@@ -294,6 +294,8 @@ export const seedHeroSecondaryReview = {
   coverImage: null,
   featured: false,
   status: "Playing",
+  likeCount: 0,
+  likedByMe: false,
 } as const;
 
 export const seedUsers = [

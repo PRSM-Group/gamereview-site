@@ -1,79 +1,58 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useCallback } from "react";
 import { toggleGameLikeAction } from "@/actions/like";
+import { useLikeToggle } from "@/lib/use-like-toggle";
 
 type LikeGameButtonProps = {
   gameId: string;
   likedByMe: boolean;
   isLoggedIn: boolean;
+  className?: string;
+  size?: "sm" | "md";
 };
 
 export function LikeGameButton({
   gameId,
   likedByMe,
   isLoggedIn,
+  className = "",
+  size = "md",
 }: LikeGameButtonProps) {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  const [liked, setLiked] = useState(likedByMe);
-  const [error, setError] = useState<string | null>(null);
-  const skipNextSync = useRef(false);
+  const onToggle = useCallback(
+    (liked: boolean) => toggleGameLikeAction(gameId, liked),
+    [gameId],
+  );
 
-  useEffect(() => {
-    setLiked(likedByMe);
-    skipNextSync.current = false;
-  }, [gameId]);
+  const { liked, error, toggle, setError } = useLikeToggle({
+    itemId: gameId,
+    initialLiked: likedByMe,
+    onToggle,
+  });
 
-  useEffect(() => {
-    if (isPending) return;
-    if (skipNextSync.current) {
-      if (likedByMe === liked) {
-        skipNextSync.current = false;
-      }
-      return;
-    }
-    setLiked(likedByMe);
-  }, [likedByMe, isPending, liked]);
+  const iconClass = size === "sm" ? "h-6 w-6" : "h-8 w-8";
 
-  function toggle() {
+  function handleClick(event: React.MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+
     if (!isLoggedIn) {
       setError("Log in to like games.");
       return;
     }
-    if (isPending) return;
 
-    const nextLiked = !liked;
-    const previousLiked = liked;
-    setLiked(nextLiked);
-    setError(null);
-    skipNextSync.current = true;
-
-    startTransition(async () => {
-      const result = await toggleGameLikeAction(gameId, nextLiked);
-      if (!result.success) {
-        setLiked(previousLiked);
-        setError(result.message);
-        skipNextSync.current = false;
-        return;
-      }
-
-      setLiked(result.liked ?? nextLiked);
-      router.refresh();
-    });
+    toggle();
   }
 
   return (
-    <div className="relative z-10 flex flex-col items-end">
+    <div className={`flex flex-col items-end ${className}`}>
       <button
         type="button"
-        disabled={isPending}
-        onClick={toggle}
+        onClick={handleClick}
         aria-pressed={liked}
         aria-label={liked ? "Unlike game" : "Like game"}
-        className={`transition-colors focus:outline-none disabled:opacity-60 ${
+        className={`transition-colors focus:outline-none ${
           liked ? "text-red-500" : "text-white hover:text-red-500"
         }`}
       >
@@ -83,7 +62,7 @@ export function LikeGameButton({
           viewBox="0 0 24 24"
           strokeWidth="1.5"
           stroke="currentColor"
-          className="h-8 w-8"
+          className={iconClass}
         >
           <path
             strokeLinecap="round"

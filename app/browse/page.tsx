@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { BrowsePageClient } from "@/components/browse/BrowsePageClient";
 import { getAllGames } from "@/services/game.service";
+import { getLikedGameIdsForUser } from "@/services/like.service";
 
 export const dynamic = "force-dynamic";
 
@@ -18,11 +19,21 @@ export default async function BrowsePage({
   const { sort } = await searchParams;
   const initialSort = sort === "rating" ? "rating" : "reviews";
   const [session, games] = await Promise.all([auth(), getAllGames()]);
+  const likedGameIds = session?.user.id
+    ? [
+        ...(await getLikedGameIdsForUser(
+          session.user.id,
+          games.map((game) => game.id),
+        )),
+      ]
+    : [];
+
   return (
     <BrowsePageClient
       initialSession={session}
       initialSort={initialSort}
       games={games}
+      likedGameIds={likedGameIds}
     />
   );
 }

@@ -27,6 +27,7 @@ export async function toggleGameLikeAction(
     revalidatePath(`/games/${game.slug}`);
     revalidatePath("/");
     revalidatePath("/browse");
+    revalidatePath("/profile", "layout");
     return {
       success: true,
       message: liked ? "Game liked." : "Game unliked.",
@@ -61,6 +62,7 @@ export async function toggleReviewLikeAction(
     revalidatePath(`/games/${review.gameSlug}`);
     revalidatePath("/reviews");
     revalidatePath("/");
+    revalidatePath("/profile", "layout");
     return {
       success: true,
       message: liked ? "Review liked." : "Review unliked.",

@@ -1,10 +1,6 @@
 import { prisma } from "@/lib/prisma";
 
-export async function setGameLiked(
-  userId: string,
-  gameId: string,
-  liked: boolean,
-) {
+async function readGameLikeState(gameId: string, userId: string) {
   const game = await prisma.game.findUnique({
     where: { id: gameId },
     select: {
@@ -17,44 +13,20 @@ export async function setGameLiked(
       },
     },
   });
+
   if (!game) {
     throw new Error("Game not found.");
   }
 
-  const currentlyLiked = game.likedBy.length > 0;
-
-  if (liked !== currentlyLiked) {
-    await prisma.game.update({
-      where: { id: gameId },
-      data: {
-        likedBy: liked
-          ? { connect: { id: userId } }
-          : { disconnect: { id: userId } },
-      },
-    });
-  }
-
-  const likeCount = currentlyLiked
-    ? liked
-      ? game._count.likedBy
-      : Math.max(0, game._count.likedBy - 1)
-    : liked
-      ? game._count.likedBy + 1
-      : game._count.likedBy;
-
   return {
     id: game.id,
     slug: game.slug,
-    liked,
-    likeCount,
+    liked: game.likedBy.length > 0,
+    likeCount: game._count.likedBy,
   };
 }
 
-export async function setReviewLiked(
-  userId: string,
-  reviewId: string,
-  liked: boolean,
-) {
+async function readReviewLikeState(reviewId: string, userId: string) {
   const review = await prisma.review.findUnique({
     where: { id: reviewId },
     select: {
@@ -67,13 +39,48 @@ export async function setReviewLiked(
       },
     },
   });
+
   if (!review) {
     throw new Error("Review not found.");
   }
 
-  const currentlyLiked = review.likedBy.length > 0;
+  return {
+    id: review.id,
+    gameSlug: review.game.slug,
+    liked: review.likedBy.length > 0,
+    likeCount: review._count.likedBy,
+  };
+}
 
-  if (liked !== currentlyLiked) {
+export async function setGameLiked(
+  userId: string,
+  gameId: string,
+  liked: boolean,
+) {
+  const current = await readGameLikeState(gameId, userId);
+
+  if (liked !== current.liked) {
+    await prisma.game.update({
+      where: { id: gameId },
+      data: {
+        likedBy: liked
+          ? { connect: { id: userId } }
+          : { disconnect: { id: userId } },
+      },
+    });
+  }
+
+  return readGameLikeState(gameId, userId);
+}
+
+export async function setReviewLiked(
+  userId: string,
+  reviewId: string,
+  liked: boolean,
+) {
+  const current = await readReviewLikeState(reviewId, userId);
+
+  if (liked !== current.liked) {
     await prisma.review.update({
       where: { id: reviewId },
       data: {
@@ -84,20 +91,7 @@ export async function setReviewLiked(
     });
   }
 
-  const likeCount = currentlyLiked
-    ? liked
-      ? review._count.likedBy
-      : Math.max(0, review._count.likedBy - 1)
-    : liked
-      ? review._count.likedBy + 1
-      : review._count.likedBy;
-
-  return {
-    id: review.id,
-    gameSlug: review.game.slug,
-    liked,
-    likeCount,
-  };
+  return readReviewLikeState(reviewId, userId);
 }
 
 export async function isGameLikedByUser(gameId: string, userId: string) {
@@ -109,6 +103,23 @@ export async function isGameLikedByUser(gameId: string, userId: string) {
     select: { id: true },
   });
   return Boolean(match);
+}
+
+export async function getLikedGameIdsForUser(
+  userId: string,
+  gameIds: string[],
+) {
+  if (gameIds.length === 0) return new Set<string>();
+
+  const liked = await prisma.game.findMany({
+    where: {
+      id: { in: gameIds },
+      likedBy: { some: { id: userId } },
+    },
+    select: { id: true },
+  });
+
+  return new Set(liked.map((game) => game.id));
 }
 
 export async function getLikedReviewIdsForUser(

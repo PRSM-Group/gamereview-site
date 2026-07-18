@@ -10,6 +10,8 @@ export type LandingReview = {
   authorName: string;
   coverImage: string | null;
   featured: boolean;
+  likeCount: number;
+  likedByMe: boolean;
 };
 
 export type LandingGame = {
@@ -29,7 +31,11 @@ export type LandingData = {
 };
 
 function getFallbackData(): LandingData {
-  const reviews = seedReviews.map((review) => ({ ...review }));
+  const reviews = seedReviews.map((review) => ({
+    ...review,
+    likeCount: 0,
+    likedByMe: false,
+  }));
   const featuredReview =
     reviews.find((review) => review.featured) ?? reviews[0];
 
@@ -69,6 +75,8 @@ export async function getLandingData(): Promise<LandingData> {
       authorName: `@${review.user.username}`,
       coverImage: review.game.coverImage,
       featured: false,
+      likeCount: review._count.likedBy,
+      likedByMe: false,
     }));
 
     const fallback = getFallbackData();

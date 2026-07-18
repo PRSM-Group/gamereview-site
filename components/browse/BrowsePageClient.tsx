@@ -18,6 +18,7 @@ type BrowseProps = {
   initialSession?: AppSession | null;
   initialSort?: SortOption;
   games: GameSummary[];
+  likedGameIds: string[];
 };
 
 const SORT_LABELS: Record<SortOption, string> = {
@@ -29,6 +30,7 @@ export function BrowsePageClient({
   initialSession = null,
   initialSort = "reviews",
   games,
+  likedGameIds,
 }: BrowseProps) {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortOption>(initialSort);
@@ -36,6 +38,9 @@ export function BrowsePageClient({
   const [selectedGenres, setSelectedGenres] = useState<GenreValue[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [page, setPage] = useState(1);
+
+  const likedGameIdSet = useMemo(() => new Set(likedGameIds), [likedGameIds]);
+  const isLoggedIn = Boolean(initialSession?.user);
 
   const availableTags = useMemo(
     () => [...new Set(games.flatMap((game) => game.tags))].sort(),
@@ -151,7 +156,12 @@ export function BrowsePageClient({
                 </div>
               ) : (
                 pageItems.map((game) => (
-                  <GameResultCard key={game.id} game={game} />
+                  <GameResultCard
+                    key={game.id}
+                    game={game}
+                    likedByMe={likedGameIdSet.has(game.id)}
+                    isLoggedIn={isLoggedIn}
+                  />
                 ))
               )}
             </div>

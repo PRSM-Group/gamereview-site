@@ -1,13 +1,17 @@
+"use client";
+
 import Image from "next/image";
 import type { LandingReview } from "@/lib/landing-data";
 import { StarRating } from "@/components/ui/StarRating";
+import { ReviewLikeButton } from "@/components/reviews/ReviewLikeButton";
 import { resolveImageSrc } from "@/lib/image-src";
 
 type ReviewCardProps = {
   review: LandingReview;
+  isLoggedIn: boolean;
 };
 
-export function ReviewCard({ review }: ReviewCardProps) {
+export function ReviewCard({ review, isLoggedIn }: ReviewCardProps) {
   const snippet =
     review.content.length > 180
       ? `${review.content.slice(0, 180).trimEnd()}... `
@@ -41,10 +45,17 @@ export function ReviewCard({ review }: ReviewCardProps) {
 
         <p className="mt-2 font-kumbh text-sm leading-normal text-white">
           {snippet}
-          <a href="#" className="text-[#8e0314] hover:underline">
-            See More
-          </a>
+          <span className="text-[#8e0314]">See More</span>
         </p>
+
+        <div className="mt-auto flex justify-end pt-4">
+          <ReviewLikeButton
+            reviewId={review.id}
+            likeCount={review.likeCount}
+            likedByMe={review.likedByMe}
+            isLoggedIn={isLoggedIn}
+          />
+        </div>
       </div>
     </article>
   );
