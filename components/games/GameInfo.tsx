@@ -1,9 +1,12 @@
 import Image from "next/image";
 import { resolveImageSrc } from "@/lib/image-src";
+import { ReviewThisGameButton } from "@/components/games/ReviewThisGameButton";
 import type { GameDetails } from "@/services/game.service";
 
 type GameInfoData = Pick<
   GameDetails,
+  | "id"
+  | "slug"
   | "title"
   | "description"
   | "developer"
@@ -152,10 +155,11 @@ export default function GameInfo({ game }: { game: GameInfoData }) {
           </div>
         </div>
 
-        {/* review btn */}
-        <button className="w-full glass-button mt-4 rounded-[10px] px-4 py-3.5 text-base font-semibold text-white">
-          Review this Game
-        </button>
+        <ReviewThisGameButton
+          gameId={game.id}
+          gameSlug={game.slug}
+          gameTitle={game.title}
+        />
       </div>
     </div>
   );

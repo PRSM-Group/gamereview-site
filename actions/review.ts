@@ -12,12 +12,58 @@ import {
   updateReviewSchema,
   type UpdateReviewInput,
 } from "@/lib/validations/review";
-import { requireAdmin } from "@/lib/auth-helpers";
+import { requireAdmin, requireAuth } from "@/lib/auth-helpers";
+import { Recommendation, ReviewStatus } from "@/generated/prisma/client";
 
 export interface ActionResult {
   success: boolean;
   message: string;
   fieldErrors?: Record<string, string>;
+}
+
+export type SubmitGameReviewInput = {
+  gameId: string;
+  gameSlug: string;
+  heading: string;
+  content: string;
+  rating: number;
+  status: ReviewStatus;
+  recommendation: Recommendation;
+  containsSpoilers: boolean;
+};
+
+export async function submitGameReviewAction(
+  data: SubmitGameReviewInput,
+): Promise<ActionResult> {
+  let session;
+  try {
+    session = await requireAuth();
+  } catch {
+    return { success: false, message: "You must be logged in to review." };
+  }
+
+  const validated = createReviewSchema.safeParse({
+    ...data,
+    userId: session.user.id,
+  });
+
+  if (!validated.success) {
+    return {
+      success: false,
+      message: validated.error.issues[0]?.message ?? "Invalid input.",
+    };
+  }
+
+  await createReview(validated.data);
+
+  revalidatePath(`/games/${data.gameSlug}`);
+  revalidatePath("/reviews");
+  revalidatePath("/");
+
+  return {
+    success: true,
+    message: "Review submitted successfully.",
+  };
 }
 
 export async function createReviewAction(
