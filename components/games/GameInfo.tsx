@@ -1,6 +1,8 @@
 import Image from "next/image";
 import { resolveImageSrc } from "@/lib/image-src";
+import { LikeGameButton } from "@/components/games/LikeGameButton";
 import { ReviewThisGameButton } from "@/components/games/ReviewThisGameButton";
+import type { AppSession } from "@/lib/auth";
 import type { GameDetails } from "@/services/game.service";
 
 type GameInfoData = Pick<
@@ -27,7 +29,15 @@ function formatReleaseDate(releaseDate: Date) {
   });
 }
 
-export default function GameInfo({ game }: { game: GameInfoData }) {
+export default function GameInfo({
+  game,
+  initialSession = null,
+  likedByMe = false,
+}: {
+  game: GameInfoData;
+  initialSession?: AppSession | null;
+  likedByMe?: boolean;
+}) {
   return (
     <div className="flex gap-6 p-8 pb-4 -mt-5">
       {/* left side: poster img */}
@@ -47,25 +57,11 @@ export default function GameInfo({ game }: { game: GameInfoData }) {
           <h1 className="text-4xl font-extrabold tracking-tight">
             {game.title}
           </h1>
-          <button
-            className="text-white hover:text-red-500 transition-colors focus:outline-none"
-            aria-label="Add to favorites"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-              strokeWidth="1.5"
-              stroke="currentColor"
-              className="w-8 h-8"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"
-              />
-            </svg>
-          </button>
+          <LikeGameButton
+            gameId={game.id}
+            likedByMe={likedByMe}
+            isLoggedIn={Boolean(initialSession?.user)}
+          />
         </div>
         <p className="relative z-10 text-gray-300 text-base leading-relaxed mb-8">
           {game.description}
@@ -95,7 +91,7 @@ export default function GameInfo({ game }: { game: GameInfoData }) {
       </div>
 
       {/* right side */}
-      <div className="w-70 glass-card rounded-[15px] p-4 relative z-10">
+      <div className="game-side-card w-70 rounded-[15px] p-4 relative z-10">
         {/* overall rating */}
         <div className="mb-4">
           <p className="text-sm font-bold tracking-widest text-gray-200 uppercase mb-2">
@@ -159,6 +155,7 @@ export default function GameInfo({ game }: { game: GameInfoData }) {
           gameId={game.id}
           gameSlug={game.slug}
           gameTitle={game.title}
+          initialSession={initialSession}
         />
       </div>
     </div>

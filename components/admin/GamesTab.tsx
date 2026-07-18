@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   createGameAction,
@@ -10,12 +10,14 @@ import {
 } from "@/actions/game";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { GameTagSelector } from "@/components/admin/GameTagSelector";
+import { Pagination } from "@/components/ui/Pagination";
 import {
   Genre,
   Platform,
   type Genre as GenreValue,
   type Platform as PlatformValue,
 } from "@/generated/prisma/browser";
+import { PAGE_SIZE, paginateItems, totalPagesFor } from "@/lib/pagination";
 import type { GameSummary } from "@/services/game.service";
 import type { TagSummary } from "@/services/tag.service";
 
@@ -61,7 +63,14 @@ export function GamesTab({ games, tags }: GamesTabProps) {
   const [form, setForm] = useState<FormState>(emptyGameForm());
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
   const editingGame = games.find((game) => game.id === editingId);
+  const totalPages = totalPagesFor(games.length);
+  const pageItems = useMemo(() => paginateItems(games, page), [games, page]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   function openCreate() {
     setMode("create");
@@ -444,7 +453,10 @@ export function GamesTab({ games, tags }: GamesTabProps) {
       <div className="flex items-end justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold text-white">Game Catalog</h2>
-          <p className="mt-0.5 text-xs text-white/40">{games.length} titles</p>
+          <p className="mt-0.5 text-xs text-white/40">
+            {games.length} titles
+            {games.length > PAGE_SIZE ? ` · page ${page} of ${totalPages}` : ""}
+          </p>
         </div>
         <button
           type="button"
@@ -456,7 +468,7 @@ export function GamesTab({ games, tags }: GamesTabProps) {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {games.map((game) => {
+        {pageItems.map((game) => {
           return (
             <article
               key={game.id}
@@ -505,6 +517,14 @@ export function GamesTab({ games, tags }: GamesTabProps) {
           );
         })}
       </div>
+
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        totalItems={games.length}
+        onPageChange={setPage}
+        label="Admin game pages"
+      />
 
       <ConfirmDialog
         open={Boolean(deleteId)}

@@ -1,20 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { ReviewGameModal } from "@/components/games/ReviewGameModal";
+import type { AppSession } from "@/lib/auth";
 
 type ReviewThisGameButtonProps = {
   gameId: string;
   gameSlug: string;
   gameTitle: string;
+  initialSession?: AppSession | null;
 };
 
 export function ReviewThisGameButton({
   gameId,
   gameSlug,
   gameTitle,
+  initialSession = null,
 }: ReviewThisGameButtonProps) {
   const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
 
   return (
     <>
@@ -27,10 +31,11 @@ export function ReviewThisGameButton({
       </button>
       <ReviewGameModal
         open={open}
-        onClose={() => setOpen(false)}
+        onClose={close}
         gameId={gameId}
         gameSlug={gameSlug}
         gameTitle={gameTitle}
+        initialSession={initialSession}
       />
     </>
   );

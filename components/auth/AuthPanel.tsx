@@ -207,12 +207,8 @@ export function AuthPanel() {
           }
 
           if (result?.redirectTo) {
-            router.refresh();
-            if (result.redirectTo.startsWith("/admin")) {
-              window.location.assign(result.redirectTo);
-              return;
-            }
-            router.push(result.redirectTo);
+            // Hard navigate so root SessionProvider remounts with the new session.
+            window.location.assign(result.redirectTo);
           }
         } catch {
           setTip({
@@ -300,12 +296,7 @@ export function AuthPanel() {
 
         const loginResult = await finishLoginAction("");
         if (loginResult?.redirectTo) {
-          router.refresh();
-          if (loginResult.redirectTo.startsWith("/admin")) {
-            window.location.assign(loginResult.redirectTo);
-            return;
-          }
-          router.push(loginResult.redirectTo);
+          window.location.assign(loginResult.redirectTo);
           return;
         }
 

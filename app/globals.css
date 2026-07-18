@@ -149,6 +149,15 @@ html {
     0 0 18px rgba(142, 3, 20, 0.12);
 }
 
+/* Game detail sidebar: same look, no lift (avoids trapping overlays). */
+.game-side-card {
+  background: rgba(88, 5, 14, 0.08);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(142, 3, 20, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+}
+
 /* Search bar: glass without lift */
 label.glass-card:hover {
   transform: none;

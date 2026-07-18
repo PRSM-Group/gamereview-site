@@ -1,9 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { StarRating } from "@/components/ui/StarRating";
+import {
+  ReviewDetailModal,
+  type ReviewDetailData,
+} from "@/components/reviews/ReviewDetailModal";
+import { ReviewLikeButton } from "@/components/reviews/ReviewLikeButton";
 import { resolveImageSrc } from "@/lib/image-src";
 
 export type ReviewsPageReview = {
@@ -13,12 +18,15 @@ export type ReviewsPageReview = {
   rating: number;
   status: string;
   recommendation: string;
+  containsSpoilers: boolean;
   createdAt: string;
   authorName: string;
+  authorUsername: string;
   gameTitle: string;
   gameSlug: string;
   coverImage: string;
   likeCount: number;
+  likedByMe: boolean;
   isFollowing: boolean;
 };
 
@@ -45,13 +53,6 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
-function formatCount(value: number) {
-  return new Intl.NumberFormat("en", {
-    notation: "compact",
-    maximumFractionDigits: 1,
-  }).format(value);
-}
-
 export function ReviewsPageClient({
   reviews,
   isLoggedIn,
@@ -62,6 +63,8 @@ export function ReviewsPageClient({
   const [tab, setTab] = useState<FeedTab>("all");
   const [sort, setSort] = useState<SortOption>("newest");
   const [status, setStatus] = useState<StatusFilter>("all");
+  const [selected, setSelected] = useState<ReviewDetailData | null>(null);
+  const close = useCallback(() => setSelected(null), []);
 
   const visibleReviews = useMemo(() => {
     const filtered = reviews.filter((review) => {
@@ -146,10 +149,54 @@ export function ReviewsPageClient({
           visibleReviews.map((review) => (
             <article
               key={review.id}
-              className="group grid gap-4 rounded-[15px] border border-[#8e0314]/20 bg-[rgba(88,5,14,0.1)] p-4 transition-[transform,border-color,background-color,box-shadow] duration-300 hover:-translate-y-1 hover:border-[#8e0314]/50 hover:bg-[rgba(88,5,14,0.16)] hover:shadow-[0_14px_32px_rgba(88,5,14,0.2)] md:grid-cols-[167px_minmax(0,1fr)] md:gap-5 md:p-5"
+              role="button"
+              tabIndex={0}
+              onClick={() =>
+                setSelected({
+                  id: review.id,
+                  title: review.title,
+                  content: review.content,
+                  rating: review.rating,
+                  status: review.status,
+                  recommendation: review.recommendation,
+                  containsSpoilers: review.containsSpoilers,
+                  createdAt: review.createdAt,
+                  authorName: review.authorName,
+                  authorUsername: review.authorUsername,
+                  gameTitle: review.gameTitle,
+                  gameSlug: review.gameSlug,
+                  coverImage: review.coverImage,
+                  likeCount: review.likeCount,
+                  likedByMe: review.likedByMe,
+                })
+              }
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  setSelected({
+                    id: review.id,
+                    title: review.title,
+                    content: review.content,
+                    rating: review.rating,
+                    status: review.status,
+                    recommendation: review.recommendation,
+                    containsSpoilers: review.containsSpoilers,
+                    createdAt: review.createdAt,
+                    authorName: review.authorName,
+                    authorUsername: review.authorUsername,
+                    gameTitle: review.gameTitle,
+                    gameSlug: review.gameSlug,
+                    coverImage: review.coverImage,
+                    likeCount: review.likeCount,
+                    likedByMe: review.likedByMe,
+                  });
+                }
+              }}
+              className="group grid cursor-pointer gap-4 rounded-[15px] border border-[#8e0314]/20 bg-[rgba(88,5,14,0.1)] p-4 transition-[transform,border-color,background-color,box-shadow] duration-300 hover:-translate-y-1 hover:border-[#8e0314]/50 hover:bg-[rgba(88,5,14,0.16)] hover:shadow-[0_14px_32px_rgba(88,5,14,0.2)] md:grid-cols-[167px_minmax(0,1fr)] md:gap-5 md:p-5"
             >
               <Link
                 href={`/games/${review.gameSlug}`}
+                onClick={(event) => event.stopPropagation()}
                 className="relative aspect-[3/4] w-full overflow-hidden rounded-[10px] sm:max-w-[167px]"
                 aria-label={`View ${review.gameTitle}`}
               >
@@ -170,13 +217,26 @@ export function ReviewsPageClient({
                   </p>
                 </div>
 
-                <h2 className="mt-1 font-kumbh text-lg font-semibold uppercase text-white">
-                  {review.title}
-                </h2>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <h2 className="font-kumbh text-lg font-semibold uppercase text-white">
+                    {review.title}
+                  </h2>
+                  {review.containsSpoilers ? (
+                    <span className="rounded border border-[#8e0314]/50 bg-[rgba(142,3,20,0.25)] px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-widest text-[#ff8f8f]">
+                      Contains spoilers
+                    </span>
+                  ) : null}
+                </div>
                 <p className="font-kumbh text-xs text-[#997777]">
                   Status: {formatStatus(review.status)}
                 </p>
-                <p className="mt-3 line-clamp-5 font-kumbh text-sm leading-relaxed text-white md:text-base">
+                <p
+                  className={`mt-3 font-kumbh text-sm leading-relaxed text-white md:text-base ${
+                    review.containsSpoilers
+                      ? "line-clamp-2 blur-[3px] select-none"
+                      : "line-clamp-5"
+                  }`}
+                >
                   {review.content}
                 </p>
 
@@ -187,22 +247,30 @@ export function ReviewsPageClient({
                       ? "recommends this game!"
                       : "does not recommend this game."}
                   </p>
-                  <span className="flex items-center gap-2 font-kumbh text-sm text-[#997777]">
-                    <Image
-                      src="/images/review-heart.png"
-                      alt=""
-                      width={34}
-                      height={27}
-                      className="h-[27px] w-[34px] object-contain"
+                  <div
+                    onClick={(event) => event.stopPropagation()}
+                    onKeyDown={(event) => event.stopPropagation()}
+                  >
+                    <ReviewLikeButton
+                      reviewId={review.id}
+                      likeCount={review.likeCount}
+                      likedByMe={review.likedByMe}
+                      isLoggedIn={isLoggedIn}
                     />
-                    {formatCount(review.likeCount)}
-                  </span>
+                  </div>
                 </div>
               </div>
             </article>
           ))
         )}
       </div>
+
+      <ReviewDetailModal
+        open={Boolean(selected)}
+        review={selected}
+        isLoggedIn={isLoggedIn}
+        onClose={close}
+      />
     </main>
   );
 }

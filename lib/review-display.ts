@@ -59,7 +59,12 @@ export function toAdminReview(review: FormattedReview): AdminReview {
   };
 }
 
-export function toPublicGameReview(review: FormattedReview) {
+export function toPublicGameReview(
+  review: FormattedReview & {
+    _count?: { likedBy: number };
+    likedByMe?: boolean;
+  },
+) {
   const rating =
     typeof review.rating === "number"
       ? review.rating
@@ -75,7 +80,14 @@ export function toPublicGameReview(review: FormattedReview) {
     coverImage: review.game.coverImage,
     featured: false,
     gameId: review.game.id,
+    gameTitle: review.game.title,
+    gameSlug: review.game.slug,
     status: review.status,
+    recommendation: review.recommendation,
+    containsSpoilers: review.containsSpoilers,
+    createdAt: new Date(review.createdAt).toISOString(),
+    likeCount: review._count?.likedBy ?? 0,
+    likedByMe: Boolean(review.likedByMe),
   };
 }
 

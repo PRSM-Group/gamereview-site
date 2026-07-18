@@ -64,10 +64,14 @@ export function SiteHeader({
     { label: "BROWSE", href: "/browse" },
     { label: "REVIEWS", href: "/reviews" },
   ];
+  if (isLoggedIn && session?.user.username) {
+    menuItems.push({
+      label: "MY PROFILE",
+      href: `/profile/${session.user.username}`,
+    });
+  }
   if (role === "ADMIN") {
     menuItems.push({ label: "ADMIN DASHBOARD", href: "/admin" });
-  } else if (isLoggedIn) {
-    menuItems.push({ label: "MY PROFILE", href: "#" });
   }
 
   useEffect(() => {
