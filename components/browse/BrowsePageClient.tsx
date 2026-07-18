@@ -7,7 +7,6 @@ import { FeaturedCarousel } from "@/components/browse/FeaturedCarousel";
 import { GameResultCard } from "@/components/browse/GameResultCard";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Pagination } from "@/components/ui/Pagination";
-import type { SortOption } from "@/lib/browse-mock";
 import { PAGE_SIZE, paginateItems, totalPagesFor } from "@/lib/pagination";
 
 import type { GameSummary } from "@/services/game.service";
@@ -16,31 +15,17 @@ const GENRES = Object.values(Genre);
 
 type BrowseProps = {
   initialSession?: AppSession | null;
-  initialSort?: SortOption;
   games: GameSummary[];
-  likedGameIds: string[];
-};
-
-const SORT_LABELS: Record<SortOption, string> = {
-  reviews: "Most reviews",
-  rating: "Highest rating",
 };
 
 export function BrowsePageClient({
   initialSession = null,
-  initialSort = "reviews",
   games,
-  likedGameIds,
 }: BrowseProps) {
   const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<SortOption>(initialSort);
-  const [sortOpen, setSortOpen] = useState(false);
   const [selectedGenres, setSelectedGenres] = useState<GenreValue[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [page, setPage] = useState(1);
-
-  const likedGameIdSet = useMemo(() => new Set(likedGameIds), [likedGameIds]);
-  const isLoggedIn = Boolean(initialSession?.user);
 
   const availableTags = useMemo(
     () => [...new Set(games.flatMap((game) => game.tags))].sort(),
@@ -50,11 +35,7 @@ export function BrowsePageClient({
   const featuredBanners = useMemo(
     () =>
       [...games]
-        .sort(
-          (first, second) =>
-            second.averageRating - first.averageRating ||
-            second.reviewCount - first.reviewCount,
-        )
+        .sort((first, second) => second.reviewCount - first.reviewCount)
         .slice(0, 5)
         .map((game) => ({
           id: game.id,
@@ -82,13 +63,10 @@ export function BrowsePageClient({
 
       return matchesQuery && matchesGenre && matchesTag;
     });
-    return [...filteredGames].sort((first, second) => {
-      if (sort === "reviews") {
-        return second.reviewCount - first.reviewCount;
-      }
-      return second.averageRating - first.averageRating;
-    });
-  }, [games, query, selectedGenres, selectedTags, sort]);
+    return [...filteredGames].sort(
+      (first, second) => second.reviewCount - first.reviewCount,
+    );
+  }, [games, query, selectedGenres, selectedTags]);
 
   const totalPages = totalPagesFor(results.length);
   const pageItems = useMemo(
@@ -98,7 +76,7 @@ export function BrowsePageClient({
 
   useEffect(() => {
     setPage(1);
-  }, [query, sort, selectedGenres, selectedTags]);
+  }, [query, selectedGenres, selectedTags]);
 
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
@@ -156,12 +134,7 @@ export function BrowsePageClient({
                 </div>
               ) : (
                 pageItems.map((game) => (
-                  <GameResultCard
-                    key={game.id}
-                    game={game}
-                    likedByMe={likedGameIdSet.has(game.id)}
-                    isLoggedIn={isLoggedIn}
-                  />
+                  <GameResultCard key={game.id} game={game} />
                 ))
               )}
             </div>
@@ -176,43 +149,6 @@ export function BrowsePageClient({
           </div>
 
           <aside className="space-y-3">
-            <div className="relative">
-              <button
-                type="button"
-                className="glass-button flex h-[46px] w-full items-center justify-center rounded-[10px] font-kumbh text-sm font-semibold tracking-wide"
-                onClick={() => setSortOpen((open) => !open)}
-                aria-expanded={sortOpen}
-              >
-                SORT BY
-              </button>
-
-              {sortOpen ? (
-                <div className="absolute left-0 right-0 top-[52px] z-20 overflow-hidden rounded-[12px] border border-white/10 bg-[#100606] shadow-xl shadow-black/50">
-                  {(Object.keys(SORT_LABELS) as SortOption[]).map((option) => (
-                    <button
-                      key={option}
-                      type="button"
-                      className={`block w-full px-4 py-3 text-left text-sm transition-colors hover:bg-[rgba(88,5,14,0.35)] ${
-                        sort === option
-                          ? "bg-[rgba(88,5,14,0.4)] text-white"
-                          : "text-white/70"
-                      }`}
-                      onClick={() => {
-                        setSort(option);
-                        setSortOpen(false);
-                      }}
-                    >
-                      {SORT_LABELS[option]}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-
-            <p className="px-1 text-[11px] text-white/40">
-              {SORT_LABELS[sort]}
-            </p>
-
             <div className="glass-card rounded-[15px] p-4">
               <p className="font-kumbh text-xs font-semibold tracking-wide text-white">
                 GENRES
