@@ -1,29 +1,32 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { updateUserRoleAction } from "@/actions/user";
 import { deleteReviewAction } from "@/actions/review";
+import type { AdminUserRow } from "@/components/admin/AdminPanel";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
-import {
-  initialUsers,
-  ROLES,
-  type MockUser,
-  type Role,
-} from "@/lib/admin-mock";
+import { ROLES, type Role } from "@/lib/admin-mock";
 import type { AdminReview } from "@/lib/review-display";
 
 type UsersTabProps = {
   gamesById: Record<string, string>;
   reviews: AdminReview[];
+  users: AdminUserRow[];
 };
 
 export function UsersTab({
   gamesById,
   reviews,
+  users: initialUsers,
 }: UsersTabProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [users, setUsers] = useState<MockUser[]>(initialUsers);
+  const [users, setUsers] = useState<AdminUserRow[]>(initialUsers);
+
+  useEffect(() => {
+    setUsers(initialUsers);
+  }, [initialUsers]);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [pendingRole, setPendingRole] = useState<{
     userId: string;
@@ -68,19 +71,34 @@ export function UsersTab({
     };
   });
 
-  function requestRoleChange(user: MockUser, role: Role) {
+  function requestRoleChange(user: AdminUserRow, role: Role) {
     if (user.role === role) return;
     setPendingRole({ userId: user.id, role, username: user.username });
   }
 
   function confirmRoleChange() {
     if (!pendingRole) return;
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === pendingRole.userId ? { ...u, role: pendingRole.role } : u,
-      ),
-    );
-    setPendingRole(null);
+
+    const { userId, role } = pendingRole;
+    startTransition(async () => {
+      try {
+        const result = await updateUserRoleAction(userId, role);
+        if (!result.success) {
+          setAlertMessage(result.message);
+          setPendingRole(null);
+          return;
+        }
+
+        setUsers((prev) =>
+          prev.map((u) => (u.id === userId ? { ...u, role } : u)),
+        );
+        setPendingRole(null);
+        router.refresh();
+      } catch {
+        setAlertMessage("Unable to update user role.");
+        setPendingRole(null);
+      }
+    });
   }
 
   function confirmDeleteReview() {
@@ -125,52 +143,64 @@ export function UsersTab({
               </tr>
             </thead>
             <tbody>
-              {usersWithFlags.map((user) => (
-                <tr
-                  key={user.id}
-                  className="admin-table-row cursor-pointer"
-                  data-selected={selectedUserId === user.id}
-                  onClick={() => setSelectedUserId(user.id)}
-                >
-                  <td className="px-5 py-3.5">
-                    <p className="font-medium text-white">@{user.username}</p>
-                    <p className="text-xs text-white/40">{user.displayName}</p>
-                  </td>
-                  <td className="px-4 py-3.5 text-white/65">{user.email}</td>
-                  <td className="px-4 py-3.5 text-white/55">
-                    {new Date(user.createdAt).toLocaleDateString()}
-                  </td>
+              {usersWithFlags.length === 0 ? (
+                <tr>
                   <td
-                    className="px-4 py-3.5"
-                    onClick={(e) => e.stopPropagation()}
+                    colSpan={5}
+                    className="px-5 py-8 text-center text-sm text-white/45"
                   >
-                    <select
-                      className="admin-input max-w-[110px] py-1.5 text-xs"
-                      value={user.role}
-                      onChange={(e) =>
-                        requestRoleChange(user, e.target.value as Role)
-                      }
-                    >
-                      {ROLES.map((role) => (
-                        <option key={role} value={role}>
-                          {role}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="px-4 py-3.5">
-                    <span
-                      className={`inline-flex min-w-7 justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${
-                        user.flagTotal > 0
-                          ? "bg-[rgba(142,3,20,0.35)] text-[#ff8f8f]"
-                          : "bg-white/5 text-white/45"
-                      }`}
-                    >
-                      {user.flagTotal}
-                    </span>
+                    No users yet.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                usersWithFlags.map((user) => (
+                  <tr
+                    key={user.id}
+                    className="admin-table-row cursor-pointer"
+                    data-selected={selectedUserId === user.id}
+                    onClick={() => setSelectedUserId(user.id)}
+                  >
+                    <td className="px-5 py-3.5">
+                      <p className="font-medium text-white">@{user.username}</p>
+                      <p className="text-xs text-white/40">{user.displayName}</p>
+                    </td>
+                    <td className="px-4 py-3.5 text-white/65">{user.email}</td>
+                    <td className="px-4 py-3.5 text-white/55">
+                      {new Date(user.createdAt).toLocaleDateString()}
+                    </td>
+                    <td
+                      className="px-4 py-3.5"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <select
+                        className="admin-input max-w-[110px] py-1.5 text-xs"
+                        value={user.role}
+                        disabled={isPending}
+                        onChange={(e) =>
+                          requestRoleChange(user, e.target.value as Role)
+                        }
+                      >
+                        {ROLES.map((role) => (
+                          <option key={role} value={role}>
+                            {role}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <span
+                        className={`inline-flex min-w-7 justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+                          user.flagTotal > 0
+                            ? "bg-[rgba(142,3,20,0.35)] text-[#ff8f8f]"
+                            : "bg-white/5 text-white/45"
+                        }`}
+                      >
+                        {user.flagTotal}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

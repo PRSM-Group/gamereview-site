@@ -1,4 +1,14 @@
+import { UserRole } from "@/generated/prisma/client";
 import { prisma } from "../lib/prisma";
+
+export type AdminUserSummary = {
+  id: string;
+  username: string;
+  displayName: string;
+  email: string;
+  role: UserRole;
+  createdAt: Date;
+};
 
 //get user by id
 export async function getUserById(id: string) {
@@ -35,6 +45,31 @@ export async function getAllUsers() {
       username: true,
       profileImage: true,
       bio: true,
+    },
+  });
+}
+
+export async function getUsersForAdmin(): Promise<AdminUserSummary[]> {
+  return prisma.user.findMany({
+    select: {
+      id: true,
+      username: true,
+      displayName: true,
+      email: true,
+      role: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+export async function updateUserRole(id: string, role: UserRole) {
+  return prisma.user.update({
+    where: { id },
+    data: { role },
+    select: {
+      id: true,
+      role: true,
     },
   });
 }

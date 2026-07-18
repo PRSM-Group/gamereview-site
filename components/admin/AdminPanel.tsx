@@ -9,15 +9,27 @@ import { TagCatalogPanel } from "@/components/admin/TagCatalogPanel";
 import { UsersTab } from "@/components/admin/UsersTab";
 import type { AdminReview } from "@/lib/review-display";
 import { SITE_NAME } from "@/lib/seed-data";
+import type { Role } from "@/lib/admin-mock";
 import type { GameSummary } from "@/services/game.service";
 import type { TagSummary } from "@/services/tag.service";
 
 type Tab = "users" | "games" | "tags" | "reviews";
 
+export type AdminUserRow = {
+  id: string;
+  username: string;
+  displayName: string;
+  email: string;
+  role: Role;
+  createdAt: string;
+};
+
 type AdminPanelProps = {
   games: GameSummary[];
   tags: TagSummary[];
   reviews: AdminReview[];
+  users: AdminUserRow[];
+  adminUser: { name: string; email: string } | null;
 };
 
 const NAV: {
@@ -112,7 +124,13 @@ const NAV: {
   },
 ];
 
-export function AdminPanel({ games, tags, reviews }: AdminPanelProps) {
+export function AdminPanel({
+  games,
+  tags,
+  reviews,
+  users,
+  adminUser,
+}: AdminPanelProps) {
   const [logoutPending, startLogout] = useTransition();
   const [tab, setTab] = useState<Tab>("users");
 
@@ -126,6 +144,13 @@ export function AdminPanel({ games, tags, reviews }: AdminPanelProps) {
   );
 
   const active = NAV.find((item) => item.id === tab)!;
+  const adminInitials =
+    adminUser?.name
+      .split(/\s+/)
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "AD";
 
   return (
     <div className="admin-shell flex min-h-full text-white">
@@ -164,12 +189,14 @@ export function AdminPanel({ games, tags, reviews }: AdminPanelProps) {
         <div className="mt-2 border-t border-white/8 px-4 py-4">
           <div className="flex items-center gap-3 rounded-xl bg-white/[0.03] px-3 py-2.5">
             <div className="flex size-8 items-center justify-center rounded-full bg-[rgba(88,5,14,0.55)] text-xs font-semibold">
-              SA
+              {adminInitials}
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium">Site Admin</p>
+              <p className="truncate text-sm font-medium">
+                {adminUser?.name ?? "Admin"}
+              </p>
               <p className="truncate text-[11px] text-white/40">
-                mock · no auth
+                {adminUser?.email ?? "admin"}
               </p>
             </div>
           </div>
@@ -243,7 +270,7 @@ export function AdminPanel({ games, tags, reviews }: AdminPanelProps) {
 
         <main className="admin-panel m-4 flex-1 overflow-auto p-4 md:m-6 md:p-6">
           {tab === "users" ? (
-            <UsersTab gamesById={gamesById} reviews={reviews} />
+            <UsersTab gamesById={gamesById} reviews={reviews} users={users} />
           ) : tab === "games" ? (
             <GamesTab games={games} tags={tags} />
           ) : tab === "tags" ? (
