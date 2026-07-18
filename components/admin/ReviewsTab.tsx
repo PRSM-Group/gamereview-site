@@ -4,9 +4,9 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { deleteReviewAction } from "@/actions/review";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+import { Pagination } from "@/components/ui/Pagination";
 import type { AdminReview } from "@/lib/review-display";
-
-const REVIEWS_PER_PAGE = 5;
+import { PAGE_SIZE, paginateItems, totalPagesFor } from "@/lib/pagination";
 
 type ReviewsTabProps = {
   reviews: AdminReview[];
@@ -30,6 +30,7 @@ export function ReviewsTab({
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
+  const [gamesPage, setGamesPage] = useState(1);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
 
@@ -88,15 +89,16 @@ export function ReviewsTab({
       );
   }, [reviews, selectedGameId, query]);
 
-  const totalPages = Math.max(1, Math.ceil(gameReviews.length / REVIEWS_PER_PAGE));
+  const totalPages = totalPagesFor(gameReviews.length);
+  const gamesTotalPages = totalPagesFor(filteredGames.length);
 
   const paginatedReviews = useMemo(
-    () =>
-      gameReviews.slice(
-        (page - 1) * REVIEWS_PER_PAGE,
-        page * REVIEWS_PER_PAGE,
-      ),
+    () => paginateItems(gameReviews, page),
     [gameReviews, page],
+  );
+  const paginatedGames = useMemo(
+    () => paginateItems(filteredGames, gamesPage),
+    [filteredGames, gamesPage],
   );
 
   useEffect(() => {
@@ -104,8 +106,16 @@ export function ReviewsTab({
   }, [selectedGameId, query]);
 
   useEffect(() => {
+    setGamesPage(1);
+  }, [query, selectedGameId]);
+
+  useEffect(() => {
     if (page > totalPages) setPage(totalPages);
   }, [page, totalPages]);
+
+  useEffect(() => {
+    if (gamesPage > gamesTotalPages) setGamesPage(gamesTotalPages);
+  }, [gamesPage, gamesTotalPages]);
 
   const flaggedCount = reviews.filter((r) => r.flagCount > 0).length;
 
@@ -157,7 +167,7 @@ export function ReviewsTab({
             </h2>
             <p className="mt-0.5 text-xs text-white/40">
               {selectedGame.reviewCount} reviews · {selectedGame.flagCount} flags
-              {gameReviews.length > REVIEWS_PER_PAGE
+              {gameReviews.length > PAGE_SIZE
                 ? ` · page ${page} of ${totalPages}`
                 : ""}
             </p>
@@ -244,46 +254,13 @@ export function ReviewsTab({
           )}
         </div>
 
-        {gameReviews.length > REVIEWS_PER_PAGE ? (
-          <nav
-            aria-label="Review pages"
-            className="flex flex-wrap items-center justify-center gap-2"
-          >
-            <button
-              type="button"
-              disabled={page <= 1}
-              className="rounded-lg px-3 py-1.5 text-xs text-white/50 transition-colors hover:bg-white/5 hover:text-white/85 disabled:opacity-30 disabled:hover:bg-transparent"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-            >
-              Prev
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-              (pageNum) => (
-                <button
-                  key={pageNum}
-                  type="button"
-                  aria-current={pageNum === page ? "page" : undefined}
-                  className={`min-w-9 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                    pageNum === page
-                      ? "bg-[rgba(88,5,14,0.55)] text-white"
-                      : "bg-white/5 text-white/55 hover:bg-white/10 hover:text-white/85"
-                  }`}
-                  onClick={() => setPage(pageNum)}
-                >
-                  {pageNum}
-                </button>
-              ),
-            )}
-            <button
-              type="button"
-              disabled={page >= totalPages}
-              className="rounded-lg px-3 py-1.5 text-xs text-white/50 transition-colors hover:bg-white/5 hover:text-white/85 disabled:opacity-30 disabled:hover:bg-transparent"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            >
-              Next
-            </button>
-          </nav>
-        ) : null}
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          totalItems={gameReviews.length}
+          onPageChange={setPage}
+          label="Review pages"
+        />
 
         <ConfirmDialog
           open={Boolean(pendingDeleteId)}
@@ -316,6 +293,9 @@ export function ReviewsTab({
           <p className="mt-0.5 text-xs text-white/40">
             {gameSummaries.length} with reviews · {reviews.length} total ·{" "}
             {flaggedCount} flagged
+            {filteredGames.length > PAGE_SIZE
+              ? ` · page ${gamesPage} of ${gamesTotalPages}`
+              : ""}
           </p>
         </div>
         <label className="block min-w-[200px] flex-1 sm:max-w-xs">
@@ -351,7 +331,7 @@ export function ReviewsTab({
                   </td>
                 </tr>
               ) : (
-                filteredGames.map((game) => (
+                paginatedGames.map((game) => (
                   <tr
                     key={game.gameId}
                     className="admin-table-row cursor-pointer"
@@ -384,6 +364,14 @@ export function ReviewsTab({
           </table>
         </div>
       </div>
+
+      <Pagination
+        page={gamesPage}
+        totalPages={gamesTotalPages}
+        totalItems={filteredGames.length}
+        onPageChange={setGamesPage}
+        label="Admin review game pages"
+      />
     </div>
   );
 }

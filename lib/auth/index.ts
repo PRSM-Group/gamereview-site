@@ -8,6 +8,7 @@ export type AppSession = {
     id: string;
     email: string;
     name: string;
+    username: string;
     role: UserRole;
   };
 };
@@ -42,6 +43,7 @@ export async function auth(): Promise<AppSession | null> {
         id: prismaUser.id,
         email: prismaUser.email,
         name: prismaUser.displayName,
+        username: prismaUser.username,
         role: prismaUser.role,
       },
     };

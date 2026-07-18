@@ -5,6 +5,7 @@ import {
   type ReviewsPageReview,
 } from "@/components/reviews/ReviewsPageClient";
 import { auth } from "@/lib/auth";
+import { getLikedReviewIdsForUser } from "@/services/like.service";
 import { getAllReviews } from "@/services/review.service";
 
 export const metadata: Metadata = {
@@ -14,6 +15,12 @@ export const metadata: Metadata = {
 
 export default async function ReviewsPage() {
   const [session, reviews] = await Promise.all([auth(), getAllReviews()]);
+  const likedReviewIds = session?.user.id
+    ? await getLikedReviewIdsForUser(
+        session.user.id,
+        reviews.map((review) => review.id),
+      )
+    : new Set<string>();
 
   const reviewFeed: ReviewsPageReview[] = reviews.map((review) => ({
     id: review.id,
@@ -22,12 +29,15 @@ export default async function ReviewsPage() {
     rating: review.rating,
     status: review.status,
     recommendation: review.recommendation,
+    containsSpoilers: review.containsSpoilers,
     createdAt: review.createdAt.toISOString(),
     authorName: review.user.displayName,
+    authorUsername: review.user.username,
     gameTitle: review.game.title,
     gameSlug: review.game.slug,
     coverImage: review.game.coverImage,
     likeCount: review._count.likedBy,
+    likedByMe: likedReviewIds.has(review.id),
     isFollowing: false,
   }));
 

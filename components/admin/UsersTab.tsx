@@ -6,7 +6,9 @@ import { updateUserRoleAction } from "@/actions/user";
 import { deleteReviewAction } from "@/actions/review";
 import type { AdminUserRow } from "@/components/admin/AdminPanel";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+import { Pagination } from "@/components/ui/Pagination";
 import { ROLES, type Role } from "@/lib/admin-mock";
+import { PAGE_SIZE, paginateItems, totalPagesFor } from "@/lib/pagination";
 import type { AdminReview } from "@/lib/review-display";
 
 type UsersTabProps = {
@@ -37,6 +39,7 @@ export function UsersTab({
     string | null
   >(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   const selected = users.find((u) => u.id === selectedUserId) ?? null;
   const userReviews = useMemo(() => {
@@ -70,6 +73,15 @@ export function UsersTab({
       flagTotal: theirs.reduce((sum, r) => sum + r.flagCount, 0),
     };
   });
+  const totalPages = totalPagesFor(usersWithFlags.length);
+  const pageUsers = useMemo(
+    () => paginateItems(usersWithFlags, page),
+    [usersWithFlags, page],
+  );
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   function requestRoleChange(user: AdminUserRow, role: Role) {
     if (user.role === role) return;
@@ -128,6 +140,9 @@ export function UsersTab({
             <h2 className="text-sm font-semibold text-white">All users</h2>
             <p className="mt-0.5 text-xs text-white/40">
               {usersWithFlags.length} accounts
+              {usersWithFlags.length > PAGE_SIZE
+                ? ` · page ${page} of ${totalPages}`
+                : ""}
             </p>
           </div>
         </div>
@@ -153,7 +168,7 @@ export function UsersTab({
                   </td>
                 </tr>
               ) : (
-                usersWithFlags.map((user) => (
+                pageUsers.map((user) => (
                   <tr
                     key={user.id}
                     className="admin-table-row cursor-pointer"
@@ -203,6 +218,15 @@ export function UsersTab({
               )}
             </tbody>
           </table>
+        </div>
+        <div className="border-t border-white/8 px-5 py-3">
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={usersWithFlags.length}
+            onPageChange={setPage}
+            label="Admin user pages"
+          />
         </div>
       </section>
 

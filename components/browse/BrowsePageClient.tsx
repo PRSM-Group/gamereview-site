@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { AppSession } from "@/lib/auth";
 import Image from "next/image";
 import { FeaturedCarousel } from "@/components/browse/FeaturedCarousel";
 import { GameResultCard } from "@/components/browse/GameResultCard";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { Pagination } from "@/components/ui/Pagination";
 import type { SortOption } from "@/lib/browse-mock";
+import { PAGE_SIZE, paginateItems, totalPagesFor } from "@/lib/pagination";
 
 import type { GameSummary } from "@/services/game.service";
 import { Genre, type Genre as GenreValue } from "@/generated/prisma/browser";
@@ -33,6 +35,7 @@ export function BrowsePageClient({
   const [sortOpen, setSortOpen] = useState(false);
   const [selectedGenres, setSelectedGenres] = useState<GenreValue[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [page, setPage] = useState(1);
 
   const availableTags = useMemo(
     () => [...new Set(games.flatMap((game) => game.tags))].sort(),
@@ -82,6 +85,20 @@ export function BrowsePageClient({
     });
   }, [games, query, selectedGenres, selectedTags, sort]);
 
+  const totalPages = totalPagesFor(results.length);
+  const pageItems = useMemo(
+    () => paginateItems(results, page),
+    [results, page],
+  );
+
+  useEffect(() => {
+    setPage(1);
+  }, [query, sort, selectedGenres, selectedTags]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
   function toggleGenre(genre: GenreValue) {
     setSelectedGenres((prev) =>
       prev.includes(genre) ? prev.filter((g) => g !== genre) : [...prev, genre],
@@ -122,6 +139,9 @@ export function BrowsePageClient({
 
             <p className="text-xs text-white/40">
               {results.length} game{results.length === 1 ? "" : "s"}
+              {results.length > PAGE_SIZE
+                ? ` · page ${page} of ${totalPages}`
+                : ""}
             </p>
 
             <div className="space-y-4">
@@ -130,11 +150,19 @@ export function BrowsePageClient({
                   No games match your search or filters.
                 </div>
               ) : (
-                results.map((game) => (
+                pageItems.map((game) => (
                   <GameResultCard key={game.id} game={game} />
                 ))
               )}
             </div>
+
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              totalItems={results.length}
+              onPageChange={setPage}
+              label="Browse pages"
+            />
           </div>
 
           <aside className="space-y-3">

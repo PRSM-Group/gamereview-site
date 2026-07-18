@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useId, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { submitGameReviewAction } from "@/actions/review";
@@ -9,6 +10,7 @@ import {
   Recommendation,
   ReviewStatus,
 } from "@/generated/prisma/enums";
+import type { AppSession } from "@/lib/auth";
 
 type ReviewGameModalProps = {
   open: boolean;
@@ -16,9 +18,10 @@ type ReviewGameModalProps = {
   gameId: string;
   gameSlug: string;
   gameTitle: string;
+  initialSession?: AppSession | null;
 };
 
-const RATING_OPTIONS = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
+const RATING_OPTIONS = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5] as const;
 
 export function ReviewGameModal({
   open,
@@ -26,9 +29,13 @@ export function ReviewGameModal({
   gameId,
   gameSlug,
   gameTitle,
+  initialSession = null,
 }: ReviewGameModalProps) {
   const router = useRouter();
-  const session = useAppSession();
+  const titleId = useId();
+  const clientSession = useAppSession();
+  const session = clientSession ?? initialSession;
+  const [mounted, setMounted] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [heading, setHeading] = useState("");
@@ -41,10 +48,14 @@ export function ReviewGameModal({
   const [containsSpoilers, setContainsSpoilers] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
     if (!open) return;
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape" && !isPending) onClose();
     }
 
     document.addEventListener("keydown", onKeyDown);
@@ -55,7 +66,7 @@ export function ReviewGameModal({
       document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = previous;
     };
-  }, [open, onClose]);
+  }, [open, onClose, isPending]);
 
   useEffect(() => {
     if (!open) return;
@@ -68,56 +79,69 @@ export function ReviewGameModal({
     setContainsSpoilers(false);
   }, [open]);
 
-  if (!open) return null;
-
   function submit() {
     if (!session?.user) {
       setError("You must be logged in to review.");
       return;
     }
 
+    const trimmedHeading = heading.trim();
+    const trimmedContent = content.trim();
+    if (!trimmedHeading || !trimmedContent) {
+      setError("Heading and review content are required.");
+      return;
+    }
+
     startTransition(async () => {
-      const result = await submitGameReviewAction({
-        gameId,
-        gameSlug,
-        heading,
-        content,
-        rating,
-        status,
-        recommendation,
-        containsSpoilers,
-      });
+      try {
+        const result = await submitGameReviewAction({
+          gameId,
+          gameSlug,
+          heading: trimmedHeading,
+          content: trimmedContent,
+          rating,
+          status,
+          recommendation,
+          containsSpoilers,
+        });
 
-      if (!result.success) {
-        setError(result.message);
-        return;
+        if (!result.success) {
+          setError(result.message);
+          return;
+        }
+
+        onClose();
+        router.refresh();
+      } catch {
+        setError("Unable to submit the review. Please try again.");
       }
-
-      onClose();
-      router.refresh();
     });
   }
 
-  return (
+  if (!open || !mounted) return null;
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4"
       role="presentation"
-      onClick={onClose}
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !isPending) onClose();
+      }}
     >
       <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
 
       <div
         role="dialog"
         aria-modal="true"
-        aria-labelledby="review-game-title"
-        className="relative max-h-[90vh] w-full max-w-[520px] overflow-y-auto rounded-2xl border border-white/10 bg-[#0e0606] shadow-[0_24px_80px_rgba(0,0,0,0.65)] animate-fade-up"
-        onClick={(e) => e.stopPropagation()}
+        aria-labelledby={titleId}
+        className="relative z-[1] flex max-h-[90vh] w-full max-w-[520px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0e0606] shadow-[0_24px_80px_rgba(0,0,0,0.65)] animate-fade-up"
+        onMouseDown={(event) => event.stopPropagation()}
       >
-        <div className="h-1 w-full bg-gradient-to-r from-[#8e0314] via-[#58050e] to-transparent" />
+        <div className="h-1 w-full shrink-0 bg-gradient-to-r from-[#8e0314] via-[#58050e] to-transparent" />
 
-        <div className="p-6">
+        <div className="overflow-y-auto p-6">
           <h3
-            id="review-game-title"
+            id={titleId}
             className="font-kumbh text-lg font-semibold tracking-tight text-white"
           >
             Review {gameTitle}
@@ -150,8 +174,8 @@ export function ReviewGameModal({
           ) : (
             <form
               className="mt-5 space-y-4"
-              onSubmit={(e) => {
-                e.preventDefault();
+              onSubmit={(event) => {
+                event.preventDefault();
                 submit();
               }}
             >
@@ -162,7 +186,9 @@ export function ReviewGameModal({
                   value={heading}
                   maxLength={100}
                   required
-                  onChange={(e) => setHeading(e.target.value)}
+                  autoFocus
+                  disabled={isPending}
+                  onChange={(event) => setHeading(event.target.value)}
                 />
               </label>
 
@@ -173,17 +199,19 @@ export function ReviewGameModal({
                   value={content}
                   maxLength={4000}
                   required
-                  onChange={(e) => setContent(e.target.value)}
+                  disabled={isPending}
+                  onChange={(event) => setContent(event.target.value)}
                 />
               </label>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <label className="block text-xs text-white/45">
                   Rating
                   <select
                     className="admin-input mt-1.5"
                     value={rating}
-                    onChange={(e) => setRating(Number(e.target.value))}
+                    disabled={isPending}
+                    onChange={(event) => setRating(Number(event.target.value))}
                   >
                     {RATING_OPTIONS.map((value) => (
                       <option key={value} value={value}>
@@ -198,8 +226,9 @@ export function ReviewGameModal({
                   <select
                     className="admin-input mt-1.5"
                     value={status}
-                    onChange={(e) =>
-                      setStatus(e.target.value as ReviewStatus)
+                    disabled={isPending}
+                    onChange={(event) =>
+                      setStatus(event.target.value as ReviewStatus)
                     }
                   >
                     <option value={ReviewStatus.PLAYING}>Playing</option>
@@ -214,8 +243,9 @@ export function ReviewGameModal({
                 <select
                   className="admin-input mt-1.5"
                   value={recommendation}
-                  onChange={(e) =>
-                    setRecommendation(e.target.value as Recommendation)
+                  disabled={isPending}
+                  onChange={(event) =>
+                    setRecommendation(event.target.value as Recommendation)
                   }
                 >
                   <option value={Recommendation.RECOMMENDED}>
@@ -231,7 +261,8 @@ export function ReviewGameModal({
                 <input
                   type="checkbox"
                   checked={containsSpoilers}
-                  onChange={(e) => setContainsSpoilers(e.target.checked)}
+                  disabled={isPending}
+                  onChange={(event) => setContainsSpoilers(event.target.checked)}
                   className="size-4 rounded border-white/20 bg-black/40"
                 />
                 Contains spoilers
@@ -262,6 +293,7 @@ export function ReviewGameModal({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

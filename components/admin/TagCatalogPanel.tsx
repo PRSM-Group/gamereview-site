@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   createTagAction,
@@ -8,6 +8,8 @@ import {
   updateTagAction,
 } from "@/actions/tag";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+import { Pagination } from "@/components/ui/Pagination";
+import { PAGE_SIZE, paginateItems, totalPagesFor } from "@/lib/pagination";
 import type { TagSummary } from "@/services/tag.service";
 
 type TagCatalogPanelProps = {
@@ -22,6 +24,13 @@ export function TagCatalogPanel({ tags }: TagCatalogPanelProps) {
   const [editName, setEditName] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const totalPages = totalPagesFor(tags.length);
+  const pageTags = useMemo(() => paginateItems(tags, page), [tags, page]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   function addTag() {
     const name = newName.trim();
@@ -111,6 +120,10 @@ export function TagCatalogPanel({ tags }: TagCatalogPanelProps) {
     <>
       <div className="rounded-xl border border-white/8 bg-black/25 p-4">
         <h4 className="text-sm font-semibold text-white">Tag Catalog</h4>
+        <p className="mt-1 text-xs text-white/40">
+          {tags.length} tags
+          {tags.length > PAGE_SIZE ? ` · page ${page} of ${totalPages}` : ""}
+        </p>
         <div className="mt-4 flex gap-2">
           <input
             className="admin-input flex-1"
@@ -138,7 +151,7 @@ export function TagCatalogPanel({ tags }: TagCatalogPanelProps) {
           {tags.length === 0 ? (
             <li className="text-xs text-white/40">No tags yet.</li>
           ) : (
-            tags.map((tag) => (
+            pageTags.map((tag) => (
               <li
                 key={tag.id}
                 className="flex items-center gap-2 rounded-lg border border-white/6 bg-white/[0.02] px-3 py-2"
@@ -208,6 +221,16 @@ export function TagCatalogPanel({ tags }: TagCatalogPanelProps) {
             ))
           )}
         </ul>
+
+        <div className="mt-4">
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={tags.length}
+            onPageChange={setPage}
+            label="Admin tag pages"
+          />
+        </div>
       </div>
 
       <ConfirmDialog

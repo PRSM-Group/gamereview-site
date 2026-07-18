@@ -54,7 +54,14 @@ export async function submitGameReviewAction(
     };
   }
 
-  await createReview(validated.data);
+  try {
+    await createReview(validated.data);
+  } catch {
+    return {
+      success: false,
+      message: "Unable to submit the review. Please try again.",
+    };
+  }
 
   revalidatePath(`/games/${data.gameSlug}`);
   revalidatePath("/reviews");
