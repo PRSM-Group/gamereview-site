@@ -7,6 +7,8 @@ import { getAllReviews } from "@/services/review.service";
 import { getAllTags } from "@/services/tag.service";
 import { getUsersForAdmin } from "@/services/user.service";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Admin · VOXEL",
   description: "Admin Panel",

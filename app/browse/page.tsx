@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth";
 import { BrowsePageClient } from "@/components/browse/BrowsePageClient";
 import { getAllGames } from "@/services/game.service";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Browse · VOXEL",
   description: "Search, sort, and filter game reviews on VOXEL.",
