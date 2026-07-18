@@ -3,7 +3,7 @@ import {
   getUserByUsername,
   updateUser,
   deleteUser,
-} from "@/actions/user.service";
+} from "@/services/user.service";
 import { NextRequest, NextResponse } from "next/server";
 import next from "next";
 

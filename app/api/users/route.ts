@@ -1,4 +1,4 @@
-import { getAllUsers } from "@/actions/user.service";
+import { getAllUsers } from "@/services/user.service";
 import { NextResponse } from "next/server";
 
 export async function GET() {
