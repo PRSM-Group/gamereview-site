@@ -1,17 +1,20 @@
-"use client";
-
 import Link from "next/link";
 
 export function VerifyEmailPanel() {
   return (
-    <div className="mx-auto max-w-md p-8">
-      <h1 className="text-xl font-semibold">Verify email</h1>
-      <p className="mt-2 text-sm text-white/60">
-        Email verification is handled by the link Supabase sends after sign up.
-        After confirming, you&apos;ll return here to log in.
+    <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6 py-16">
+      <h1 className="font-kumbh text-2xl font-semibold text-white">
+        Email verification is off
+      </h1>
+      <p className="mt-3 text-sm text-white/55">
+        New accounts are verified automatically at sign up. Log in with your
+        email and password.
       </p>
-      <Link href="/login" className="mt-6 inline-block text-sm text-[#8e0314]">
-        Back to login
+      <Link
+        href="/login"
+        className="glass-button mt-8 inline-flex h-11 items-center justify-center rounded-[10px] px-6 text-sm font-semibold text-white"
+      >
+        Go to log in
       </Link>
     </div>
   );

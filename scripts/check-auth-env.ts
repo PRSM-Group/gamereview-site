@@ -3,7 +3,6 @@ import {
   getAuthCallbackUrl,
   getAppUrl,
   getSupabaseRedirectUrls,
-  SUPABASE_SMTP_RESEND,
 } from "../lib/auth/config";
 import { getSupabaseUrl } from "../lib/supabase/env";
 
@@ -14,6 +13,8 @@ const required = [
   "DATABASE_URL",
 ] as const;
 
+const optional = ["SUPABASE_SERVICE_ROLE_KEY"] as const;
+
 let failed = false;
 
 console.log("VOXEL auth setup check\n");
@@ -23,6 +24,17 @@ for (const key of required) {
   if (!value) {
     console.log(`✗ ${key} is missing`);
     failed = true;
+    continue;
+  }
+  console.log(`✓ ${key}`);
+}
+
+for (const key of optional) {
+  const value = process.env[key]?.trim();
+  if (!value) {
+    console.log(
+      `○ ${key} is missing (auto-confirm on signup + npm run auth:sync-seed)`,
+    );
     continue;
   }
   console.log(`✓ ${key}`);
@@ -49,32 +61,11 @@ for (const url of getSupabaseRedirectUrls()) {
   console.log(`  • ${url}`);
 }
 
-console.log("\nCustom SMTP (Resend free tier) — Supabase Dashboard → Authentication → SMTP:");
-console.log(`  Host: ${SUPABASE_SMTP_RESEND.host}`);
-console.log(`  Port: ${SUPABASE_SMTP_RESEND.port}`);
-console.log(`  Username: ${SUPABASE_SMTP_RESEND.username}`);
-console.log(`  Password: <Resend API key from resend.com>`);
-console.log(`  Sender (test): onboarding@resend.dev`);
+console.log("\nEmail verification is DISABLED in this app.");
+console.log("  1. Supabase → Authentication → Providers → Email → Confirm email OFF");
 console.log(
-  "  ⚠ Test sender only delivers to your Resend account email.",
+  "  2. Optional: set SUPABASE_SERVICE_ROLE_KEY so signup auto-confirms via Admin API",
 );
-console.log(
-  "    To send to any address, verify a domain at resend.com/domains",
-);
-console.log(
-  "    and set Supabase SMTP sender to noreply@yourdomain.com",
-);
-console.log(`  Docs: ${SUPABASE_SMTP_RESEND.docs}`);
-
-console.log(
-  "\nIf Resend shows ZERO emails after signup/resend:",
-);
-console.log("  1. Supabase → Authentication → Emails → SMTP → Enable custom SMTP ON");
-console.log("  2. Save host/user/password again (password field empty after save is normal)");
-console.log("  3. Sender must use a domain verified in Resend (onboarding@resend.dev");
-console.log("     often does NOT work for Supabase SMTP — verify a domain first)");
-console.log("  4. Authentication → Providers → Email → Confirm email ON");
-console.log("  5. Authentication → Logs → trigger resend → look for SMTP errors");
-console.log("  6. npm run email:test — if that works, only Supabase SMTP is broken");
+console.log("  3. Custom SMTP not required for signup/login");
 
 process.exit(failed ? 1 : 0);

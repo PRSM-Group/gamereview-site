@@ -11,6 +11,7 @@ import {
 import { PrismaPg } from "@prisma/adapter-pg";
 import { normalizeDatabaseUrl } from "../lib/database-url";
 import { seedGames, seedReviews } from "../lib/seed-data";
+import { ensureSupabaseAuthUser } from "../lib/supabase/seed-auth";
 
 const connectionString = process.env.DATABASE_URL;
 
@@ -71,8 +72,12 @@ async function main() {
   await prisma.tag.deleteMany();
   await prisma.user.deleteMany();
 
-  const passwordHash = await bcrypt.hash("password123", 12);
+  const seedPassword = "password123";
+  const passwordHash = await bcrypt.hash(seedPassword, 12);
   const verifiedAt = new Date();
+  const hasSupabaseServiceRole = Boolean(
+    process.env.SUPABASE_SERVICE_ROLE_KEY?.trim(),
+  );
 
   const users = [
     {
@@ -99,9 +104,21 @@ async function main() {
   ] as const;
 
   for (const user of users) {
+    let supabaseId: string | undefined;
+
+    if (hasSupabaseServiceRole) {
+      supabaseId = await ensureSupabaseAuthUser({
+        email: user.email,
+        username: user.username,
+        displayName: user.displayName,
+        password: seedPassword,
+      });
+    }
+
     await prisma.user.create({
       data: {
         ...user,
+        supabaseId,
         passwordHash,
         emailVerified: verifiedAt,
       },
@@ -179,8 +196,14 @@ async function main() {
   }
 
   console.log("Seed complete.");
-  console.log("Log in with admin@critline.local / password123 (admin)");
-  console.log("Or danaln@critline.local / password123 (user)");
+  if (hasSupabaseServiceRole) {
+    console.log("Log in with admin@critline.local / password123 (admin)");
+    console.log("Or danaln@critline.local / password123 (user)");
+  } else {
+    console.log(
+      "Set SUPABASE_SERVICE_ROLE_KEY and run npm run auth:sync-seed before logging in.",
+    );
+  }
 }
 
 main()

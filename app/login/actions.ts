@@ -3,8 +3,9 @@
 import {
   mapLoginAuthError,
   mapPrismaSignupError,
-  mapResendAuthError,
+  // mapResendAuthError,
 } from "@/lib/auth/errors";
+import { autoConfirmSupabaseUser } from "@/lib/auth/auto-confirm";
 import { getPostLoginRedirect } from "@/lib/auth/redirects";
 import { signOut } from "@/lib/auth";
 import type { AuthActionState } from "@/lib/auth/types";
@@ -22,8 +23,6 @@ function getString(formData: FormData, key: string) {
   return typeof value === "string" ? value : "";
 }
 
-import { getAppUrl, getAuthCallbackUrl } from "@/lib/auth/config";
-
 function toState(result: { message: string; field: AuthActionState["field"] }) {
   return { error: result.message, field: result.field };
 }
@@ -32,49 +31,95 @@ export async function logoutAction() {
   await signOut();
 }
 
-export async function loginAction(
-  _prev: AuthActionState,
-  formData: FormData,
+export async function resolveLoginErrorAction(
+  email: string,
+  supabaseMessage: string,
 ): Promise<AuthActionState> {
-  const email = getString(formData, "email").trim().toLowerCase();
-  const password = String(formData.get("password") ?? "");
-
-  if (!email) {
-    return { error: "Please fill out this field.", field: "email" };
-  }
-  if (!password) {
-    return { error: "Please fill out this field.", field: "password" };
-  }
-
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+  const lower = supabaseMessage.toLowerCase();
+  if (
+    lower.includes("invalid login credentials") ||
+    lower.includes("invalid credentials")
+  ) {
+    const prismaUser = await prisma.user.findUnique({
+      where: { email: email.trim().toLowerCase() },
+      select: { supabaseId: true },
     });
 
-    if (error) {
-      return toState(mapLoginAuthError(error.message));
+    if (!prismaUser) {
+      return toState({
+        message:
+          "No account found for that email. Sign up first, then log in.",
+        field: "email",
+      });
     }
 
-    if (!data.user?.email_confirmed_at) {
-      await supabase.auth.signOut();
-      return toState(mapLoginAuthError("Email not confirmed"));
+    if (!prismaUser.supabaseId) {
+      return toState({
+        message:
+          "This seed/dev account isn't linked to Supabase yet. Run: npm run auth:sync-seed",
+        field: "email",
+      });
+    }
+  }
+
+  return toState(mapLoginAuthError(supabaseMessage));
+}
+
+export async function finishLoginAction(
+  callbackUrl: string,
+): Promise<AuthActionState> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return toState({
+        message: "Could not establish a session. Try logging in again.",
+        field: "email",
+      });
     }
 
-    const prismaUser = await syncPrismaUser(data.user);
+    // Email verification disabled — skip email_confirmed_at check.
+    // if (!user.email_confirmed_at) {
+    //   await supabase.auth.signOut();
+    //   return toState(mapLoginAuthError("Email not confirmed"));
+    // }
+
+    const prismaUser = await syncPrismaUser(user);
 
     return {
-      redirectTo: getPostLoginRedirect(
-        getString(formData, "callbackUrl"),
-        prismaUser.role,
-      ),
+      redirectTo: getPostLoginRedirect(callbackUrl, prismaUser.role),
     };
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Could not log in. Try again.";
     return toState(mapLoginAuthError(message));
   }
+}
+
+/* Email verification disabled
+export async function confirmEmailAction(): Promise<{ ok: boolean }> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return { ok: false };
+    await syncPrismaUser(user);
+    return { ok: true };
+  } catch {
+    return { ok: false };
+  }
+}
+*/
+
+export async function autoConfirmSignupAction(
+  supabaseId: string,
+): Promise<{ ok: boolean }> {
+  return autoConfirmSupabaseUser(supabaseId);
 }
 
 export async function prepareSignupAction(
@@ -136,7 +181,6 @@ export async function completeSignupAction(input: {
   email: string;
   username: string;
   displayName: string;
-  emailVerified: string | null;
 }): Promise<AuthActionState> {
   const email = input.email.trim().toLowerCase();
 
@@ -164,15 +208,12 @@ export async function completeSignupAction(input: {
         email,
         username: input.username,
         displayName: input.displayName,
-        emailVerified: input.emailVerified
-          ? new Date(input.emailVerified)
-          : null,
+        emailVerified: new Date(),
       },
     });
 
     return {
-      success:
-        "Account created. Check your email for a verification link before logging in.",
+      success: "Account created. You can log in now.",
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
@@ -187,6 +228,7 @@ export async function signupAction(
   return prepareSignupAction(_prev, formData);
 }
 
+/* Email verification disabled
 export async function resendVerificationAction(
   _prev: AuthActionState,
   formData: FormData,
@@ -207,9 +249,7 @@ export async function resendVerificationAction(
     const { error } = await supabase.auth.resend({
       type: "signup",
       email,
-      options: {
-        emailRedirectTo: getAuthCallbackUrl(redirectOrigin),
-      },
+      options: getSignupEmailOptions(redirectOrigin),
     });
 
     if (error) {
@@ -225,3 +265,4 @@ export async function resendVerificationAction(
     return toState(mapResendAuthError(message));
   }
 }
+*/

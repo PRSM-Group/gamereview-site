@@ -135,7 +135,7 @@ export function getCallbackErrorMessage(error: string | null): string | null {
       return "This verification link has expired. Resend a new one below.";
     case "auth":
     default:
-      return "Authentication link is invalid or expired. Try signing in or resend verification.";
+      return "Authentication link is invalid or expired. Open the link in the same browser you used to sign up, or resend verification below.";
   }
 }
 

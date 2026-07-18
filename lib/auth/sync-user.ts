@@ -10,9 +10,9 @@ function metadataString(
   return typeof value === "string" ? value.trim() : undefined;
 }
 
-function emailVerifiedAt(supabaseUser: SupabaseUser): Date | null {
-  if (!supabaseUser.email_confirmed_at) return null;
-  return new Date(supabaseUser.email_confirmed_at);
+function emailVerifiedAt(_supabaseUser: SupabaseUser): Date {
+  // Email verification disabled — treat users as verified in Prisma.
+  return new Date();
 }
 
 export async function syncPrismaUser(supabaseUser: SupabaseUser): Promise<User> {
@@ -39,7 +39,7 @@ export async function syncPrismaUser(supabaseUser: SupabaseUser): Promise<User> 
       data: {
         supabaseId,
         email,
-        emailVerified: verifiedAt ?? existing.emailVerified,
+        emailVerified: verifiedAt,
       },
     });
   }

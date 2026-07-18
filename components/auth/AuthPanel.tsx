@@ -5,16 +5,18 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SITE_NAME } from "@/lib/seed-data";
 import {
-  getCallbackErrorMessage,
-  mapResendAuthError,
+  // getCallbackErrorMessage,
+  // mapLoginAuthError,
+  // mapResendAuthError,
   mapSignupAuthError,
 } from "@/lib/auth/errors";
 import {
+  autoConfirmSignupAction,
   completeSignupAction,
-  loginAction,
+  finishLoginAction,
+  resolveLoginErrorAction,
   signupAction,
 } from "@/app/login/actions";
-import { getAuthCallbackUrl } from "@/lib/auth/config";
 import { createClient } from "@/lib/supabase/client";
 
 type AuthMode = "login" | "signup";
@@ -67,13 +69,29 @@ export function AuthPanel() {
   const mode: AuthMode =
     searchParams.get("mode") === "signup" ? "signup" : "login";
   const callbackUrl = searchParams.get("callbackUrl") ?? "";
-  const verified = searchParams.get("verified") === "1";
-  const authErrorMessage = getCallbackErrorMessage(searchParams.get("error"));
+  // const verified = searchParams.get("verified") === "1";
+  // const authErrorMessage = getCallbackErrorMessage(searchParams.get("error"));
   const [tip, setTip] = useState<FieldTip | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const [resendPending, startResendTransition] = useTransition();
+  // const [resendPending, startResendTransition] = useTransition();
   const loginFormRef = useRef<HTMLFormElement>(null);
+
+  /* Email verification disabled — auth callback redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    const tokenHash = params.get("token_hash");
+    if ((!code && !tokenHash) || searchParams.get("error")) return;
+
+    const query = new URLSearchParams();
+    if (code) query.set("code", code);
+    if (tokenHash) query.set("token_hash", tokenHash);
+    const type = params.get("type");
+    if (type) query.set("type", type);
+    router.replace(`/auth/callback?${query.toString()}`);
+  }, [router, searchParams]);
+  */
 
   function switchMode(next: AuthMode) {
     setTip(null);
@@ -150,27 +168,58 @@ export function AuthPanel() {
       setSuccess(null);
 
       if (mode === "login") {
-        const result = await loginAction({}, formData);
+        const email = String(formData.get("email") ?? "").trim().toLowerCase();
+        const password = String(formData.get("password") ?? "");
+        const callbackUrl = String(formData.get("callbackUrl") ?? "");
 
-        if (result?.error && result.field) {
-          setTip({ field: result.field, message: result.error });
-          form.querySelector<HTMLElement>(`[name="${result.field}"]`)?.focus();
-          return;
-        }
+        try {
+          const supabase = createClient();
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
 
-        if (result?.success) {
-          setTip(null);
-          setSuccess(result.success);
-          return;
-        }
-
-        if (result?.redirectTo) {
-          router.refresh();
-          if (result.redirectTo.startsWith("/admin")) {
-            window.location.assign(result.redirectTo);
+          if (error) {
+            const resolved = await resolveLoginErrorAction(email, error.message);
+            if (resolved?.error && resolved.field) {
+              setTip({ field: resolved.field, message: resolved.error });
+              form
+                .querySelector<HTMLElement>(`[name="${resolved.field}"]`)
+                ?.focus();
+            }
             return;
           }
-          router.push(result.redirectTo);
+
+          // Email verification disabled
+          // if (!data.user?.email_confirmed_at) {
+          //   await supabase.auth.signOut();
+          //   const mapped = mapLoginAuthError("Email not confirmed");
+          //   setTip({ field: mapped.field, message: mapped.message });
+          //   return;
+          // }
+
+          const result = await finishLoginAction(callbackUrl);
+
+          if (result?.error && result.field) {
+            setTip({ field: result.field, message: result.error });
+            form.querySelector<HTMLElement>(`[name="${result.field}"]`)?.focus();
+            return;
+          }
+
+          if (result?.redirectTo) {
+            router.refresh();
+            if (result.redirectTo.startsWith("/admin")) {
+              window.location.assign(result.redirectTo);
+              return;
+            }
+            router.push(result.redirectTo);
+          }
+        } catch {
+          setTip({
+            field: "email",
+            message:
+              "Could not reach the server. Restart `npm run dev` and try again.",
+          });
         }
         return;
       }
@@ -189,14 +238,13 @@ export function AuthPanel() {
 
       try {
         const supabase = createClient();
-        const redirectTo = getAuthCallbackUrl(window.location.origin);
 
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: { username, displayName },
-            emailRedirectTo: redirectTo,
+            // emailRedirectTo: disabled — email verification off
           },
         });
 
@@ -223,17 +271,41 @@ export function AuthPanel() {
           return;
         }
 
+        await autoConfirmSignupAction(data.user.id);
+
         const result = await completeSignupAction({
           supabaseId: data.user.id,
           email,
           username,
           displayName,
-          emailVerified: data.user.email_confirmed_at ?? null,
         });
 
         if (result?.error && result.field) {
           setTip({ field: result.field, message: result.error });
           form.querySelector<HTMLElement>(`[name="${result.field}"]`)?.focus();
+          return;
+        }
+
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (signInError) {
+          setTip(null);
+          setSuccess(result?.success ?? "Account created. You can log in now.");
+          switchMode("login");
+          return;
+        }
+
+        const loginResult = await finishLoginAction("");
+        if (loginResult?.redirectTo) {
+          router.refresh();
+          if (loginResult.redirectTo.startsWith("/admin")) {
+            window.location.assign(loginResult.redirectTo);
+            return;
+          }
+          router.push(loginResult.redirectTo);
           return;
         }
 
@@ -250,59 +322,11 @@ export function AuthPanel() {
     });
   }
 
+  /* Email verification disabled
   function onResendVerification(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    startResendTransition(async () => {
-      setSuccess(null);
-
-      const loginEmail = loginFormRef.current?.elements.namedItem("email");
-      const email =
-        loginEmail instanceof HTMLInputElement
-          ? loginEmail.value.trim().toLowerCase()
-          : "";
-
-      if (!email) {
-        setTip({ field: "email", message: "Enter your email in the field above." });
-        loginEmail instanceof HTMLInputElement && loginEmail.focus();
-        return;
-      }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        setTip({
-          field: "email",
-          message: "Please enter a valid email address above.",
-        });
-        return;
-      }
-
-      try {
-        const supabase = createClient();
-        const { error } = await supabase.auth.resend({
-          type: "signup",
-          email,
-          options: {
-            emailRedirectTo: getAuthCallbackUrl(window.location.origin),
-          },
-        });
-
-        if (error) {
-          const mapped = mapResendAuthError(error.message);
-          setTip({ field: mapped.field, message: mapped.message });
-          return;
-        }
-
-        setTip(null);
-        setSuccess(
-          "Verification email sent. Check your inbox and spam folder.",
-        );
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Could not send email.";
-        const mapped = mapResendAuthError(message);
-        setTip({ field: mapped.field, message: mapped.message });
-      }
-    });
+    ...
   }
+  */
 
   const isLogin = mode === "login";
 
@@ -396,23 +420,19 @@ export function AuthPanel() {
                 : "Join VOXEL and start sharing what you play."}
             </p>
 
+            {/* Email verification disabled
             {verified ? (
-              <p
-                role="status"
-                className="mt-6 rounded-lg border border-[#8e0314]/35 bg-[rgba(88,5,14,0.2)] px-4 py-3 text-sm text-[#ffb4b4]"
-              >
+              <p role="status" className="...">
                 Email verified. You can log in now.
               </p>
             ) : null}
 
             {authErrorMessage ? (
-              <p
-                role="alert"
-                className="mt-6 rounded-lg border border-[#8e0314]/35 bg-[rgba(88,5,14,0.2)] px-4 py-3 text-sm text-[#ffb4b4]"
-              >
+              <p role="alert" className="...">
                 {authErrorMessage}
               </p>
             ) : null}
+            */}
 
             {success ? (
               <p
@@ -515,24 +535,7 @@ export function AuthPanel() {
               </button>
             </form>
 
-            {isLogin ? (
-              <form
-                className="mt-6 space-y-3 border-t border-white/8 pt-6"
-                onSubmit={onResendVerification}
-              >
-                <p className="text-xs text-white/40">
-                  Didn&apos;t get a verification email? Use the email above and
-                  resend.
-                </p>
-                <button
-                  type="submit"
-                  disabled={resendPending}
-                  className="glass-button flex h-10 w-full items-center justify-center rounded-[10px] font-kumbh text-xs font-semibold uppercase tracking-[0.1em] text-white disabled:opacity-60"
-                >
-                  {resendPending ? "Sending…" : "Resend verification email"}
-                </button>
-              </form>
-            ) : null}
+            {/* Email verification disabled — resend form removed */}
 
             <p className="mt-6 text-center text-sm text-white/40">
               {isLogin ? "New here?" : "Already have an account?"}{" "}
