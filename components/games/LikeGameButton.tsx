@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { toggleGameLikeAction } from "@/actions/like";
 import { useLikeToggle } from "@/lib/use-like-toggle";
 
@@ -20,6 +20,8 @@ export function LikeGameButton({
   className = "",
   size = "md",
 }: LikeGameButtonProps) {
+  const [isAnimating, setIsAnimating] = useState(false);
+
   const onToggle = useCallback(
     (liked: boolean) => toggleGameLikeAction(gameId, liked),
     [gameId],
@@ -42,6 +44,8 @@ export function LikeGameButton({
       return;
     }
 
+    // Trigger pop/scale animation
+    setIsAnimating(true);
     toggle();
   }
 
@@ -52,8 +56,10 @@ export function LikeGameButton({
         onClick={handleClick}
         aria-pressed={liked}
         aria-label={liked ? "Unlike game" : "Like game"}
-        className={`transition-colors focus:outline-none ${
-          liked ? "text-red-500" : "text-white hover:text-red-500"
+        className={`group transition-transform duration-200 ease-out focus:outline-none active:scale-90 ${
+          liked
+            ? "text-red-500 hover:text-red-600"
+            : "text-white hover:text-red-500 hover:scale-110"
         }`}
       >
         <svg
@@ -62,7 +68,10 @@ export function LikeGameButton({
           viewBox="0 0 24 24"
           strokeWidth="1.5"
           stroke="currentColor"
-          className={iconClass}
+          onAnimationEnd={() => setIsAnimating(false)}
+          className={`${iconClass} transition-colors duration-200 ${
+            isAnimating ? "animate-heart-bounce" : ""
+          }`}
         >
           <path
             strokeLinecap="round"
@@ -71,11 +80,15 @@ export function LikeGameButton({
           />
         </svg>
       </button>
+
       {error ? (
-        <p className="mt-1 max-w-[140px] text-right text-[11px] text-[#ff8f8f]">
+        <p className="mt-1 max-w-[140px] text-right text-[11px] text-[#ff8f8f] animate-fade-in">
           {error}{" "}
           {!isLoggedIn ? (
-            <Link href="/login" className="underline">
+            <Link
+              href="/login"
+              className="underline hover:text-white transition-colors"
+            >
               Log in
             </Link>
           ) : null}

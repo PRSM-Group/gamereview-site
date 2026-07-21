@@ -27,16 +27,14 @@ export type ReviewsPageReview = {
   coverImage: string;
   likeCount: number;
   likedByMe: boolean;
-  isFollowing: boolean;
 };
 
-type FeedTab = "all" | "following" | "top";
+type FeedTab = "all" | "top";
 type SortOption = "newest" | "liked";
 type StatusFilter = "all" | "PLAYING" | "FINISHED" | "DROPPED";
 
 const TABS: { id: FeedTab; label: string }[] = [
   { id: "all", label: "ALL" },
-  { id: "following", label: "FOLLOWING" },
   { id: "top", label: "TOP REVIEWS" },
 ];
 
@@ -68,15 +66,13 @@ export function ReviewsPageClient({
 
   const visibleReviews = useMemo(() => {
     const filtered = reviews.filter((review) => {
-      if (tab === "following" && !review.isFollowing) return false;
       return status === "all" || review.status === status;
     });
 
     return [...filtered].sort((first, second) => {
       if (tab === "top" || sort === "liked") {
         return (
-          second.likeCount - first.likeCount ||
-          second.rating - first.rating
+          second.likeCount - first.likeCount || second.rating - first.rating
         );
       }
       return (
@@ -89,7 +85,7 @@ export function ReviewsPageClient({
   return (
     <main className="mx-auto w-full max-w-[1054px] px-6 pb-24 pt-12 md:px-0 md:pt-12">
       <div className="flex flex-col gap-6 border-b border-white/10 pb-6 xl:flex-row xl:items-end xl:justify-between">
-        <div className="grid w-full grid-cols-3 gap-2 xl:max-w-[700px]">
+        <div className="grid w-full grid-cols-2 gap-2 xl:max-w-[460px]">
           {TABS.map((item) => (
             <button
               key={item.id}
@@ -141,9 +137,7 @@ export function ReviewsPageClient({
       <div className="mt-4 space-y-2">
         {visibleReviews.length === 0 ? (
           <div className="rounded-[15px] border border-[#8e0314]/20 bg-[rgba(88,5,14,0.1)] px-6 py-16 text-center font-kumbh text-sm text-white/50">
-            {tab === "following" && !isLoggedIn
-              ? "Log in to see reviews from people you follow."
-              : "No reviews match this view."}
+            No reviews match this view.
           </div>
         ) : (
           visibleReviews.map((review) => (
